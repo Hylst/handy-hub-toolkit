@@ -1,6 +1,8 @@
 
 import { Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -9,6 +11,8 @@ interface HeaderProps {
 }
 
 export const Header = ({ onMenuClick, activeSection, setActiveSection }: HeaderProps) => {
+  const { user } = useAuth();
+  
   const getSectionTitle = () => {
     switch (activeSection) {
       case "unit-converter": return "Convertisseurs d'Unités";
@@ -54,11 +58,23 @@ export const Header = ({ onMenuClick, activeSection, setActiveSection }: HeaderP
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
           <div className="hidden md:flex items-center space-x-1 text-sm text-gray-500">
             <span>🛠️</span>
             <span>Outils Pratiques</span>
           </div>
+          
+          {user ? (
+            <UserMenu />
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/auth'}
+              className="hidden sm:flex"
+            >
+              Connexion
+            </Button>
+          )}
         </div>
       </div>
     </header>

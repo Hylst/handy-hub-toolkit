@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { ToolSection } from "@/components/ToolSection";
@@ -11,10 +12,14 @@ import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtils } from "@/components/tools/TextUtils";
 import { DateCalculator } from "@/components/tools/DateCalculator";
 import { PasswordGenerator } from "@/components/tools/PasswordGenerator";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   const renderContent = () => {
     switch (activeSection) {
@@ -41,10 +46,27 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
                 Boîte à Outils Pratiques
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
                 Une collection d'outils utiles pour votre quotidien. Convertisseurs, calculatrices, 
                 outils de productivité et bien plus encore !
               </p>
+              
+              {!loading && !user && (
+                <div className="flex justify-center gap-4">
+                  <Button 
+                    onClick={() => navigate('/auth')}
+                    className="bg-gradient-to-r from-blue-600 to-teal-600"
+                  >
+                    Se connecter
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate('/auth')}
+                  >
+                    Créer un compte
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -70,6 +92,14 @@ const Index = () => {
                 icon="📋"
                 tools={["To-Do List", "Notes", "Pomodoro", "Rappels"]}
                 onClick={() => setActiveSection("todo")}
+              />
+              
+              <ToolSection
+                title="Sécurité"
+                description="Générateur de mots de passe sécurisés"
+                icon="🔐"
+                tools={["Mots de passe", "Hash", "Chiffrement", "2FA"]}
+                onClick={() => setActiveSection("password-generator")}
               />
               
               <ToolSection
@@ -100,6 +130,17 @@ const Index = () => {
         );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

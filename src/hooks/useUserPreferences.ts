@@ -43,8 +43,10 @@ export const useUserPreferences = (toolName: string) => {
         return;
       }
 
-      if (data) {
-        setPreferences(data.preferences || {});
+      if (data && data.preferences) {
+        // Type assertion to safely convert Json to Record<string, any>
+        const prefs = data.preferences as Record<string, any>;
+        setPreferences(prefs);
       }
     } catch (error) {
       console.error('Error loading preferences:', error);

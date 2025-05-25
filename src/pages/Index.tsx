@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { ToolSection } from "@/components/ToolSection";
 import { UnitConverter } from "@/components/tools/UnitConverter";
 import { Calculator } from "@/components/tools/Calculator";
@@ -15,12 +15,28 @@ import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorA
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  const getSectionTitle = () => {
+    switch (activeSection) {
+      case "unit-converter": return "Convertisseurs d'Unités";
+      case "calculator": return "Calculatrices";
+      case "date-calculator": return "Calculateurs de Dates";
+      case "todo": return "Productivité";
+      case "password-generator": return "Générateur de Mots de Passe";
+      case "qr-code": return "Générateur QR Code";
+      case "color-generator": return "Générateur de Couleurs";
+      case "bmi-calculator": return "Calculateur IMC";
+      case "text-utils": return "Utilitaires Texte";
+      default: return "Boîte à Outils Pratiques";
+    }
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -155,26 +171,52 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-      />
-      
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : ''}`}>
-        <Header 
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-        />
-        
-        <main className="p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
-        </main>
-      </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          
+          <SidebarInset>
+            {/* Header */}
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+              <div className="flex items-center gap-2 px-4">
+                <SidebarTrigger className="-ml-1" />
+                <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+                <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                  {getSectionTitle()}
+                </h1>
+              </div>
+              
+              <div className="ml-auto flex items-center gap-2 px-4">
+                <div className="hidden md:flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                  <span>🛠️</span>
+                  <span>Outils Pratiques</span>
+                </div>
+                
+                <ThemeToggle />
+                
+                {user ? (
+                  <UserMenu />
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/auth')}
+                    className="hidden sm:flex"
+                  >
+                    Connexion
+                  </Button>
+                )}
+              </div>
+            </header>
+            
+            {/* Main Content */}
+            <main className="flex-1 p-4 md:p-6 lg:p-8">
+              <div className="max-w-7xl mx-auto">
+                {renderContent()}
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     </div>
   );
 };

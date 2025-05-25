@@ -1,23 +1,29 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface UserPreference {
+  id: string;
   tool_name: string;
-  preferences: any;
+  preferences: Record<string, any>;
   last_used: string;
   usage_count: number;
 }
 
 export const useUserPreferences = (toolName: string) => {
   const { user } = useAuth();
-  const [preferences, setPreferences] = useState<any>({});
+  const [preferences, setPreferences] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
+  // Load preferences when component mounts or user changes
   useEffect(() => {
-    if (user && toolName) {
+    if (user) {
       loadPreferences();
+    } else {
+      setPreferences({});
+      setLoading(false);
     }
   }, [user, toolName]);
 
@@ -27,14 +33,17 @@ export const useUserPreferences = (toolName: string) => {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('preferences')
+        .select('*')
         .eq('user_id', user.id)
         .eq('tool_name', toolName)
         .single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading preferences:', error);
-      } else if (data) {
+        return;
+      }
+
+      if (data) {
         setPreferences(data.preferences || {});
       }
     } catch (error) {
@@ -44,7 +53,7 @@ export const useUserPreferences = (toolName: string) => {
     }
   };
 
-  const savePreferences = async (newPreferences: any) => {
+  const savePreferences = async (newPreferences: Record<string, any>) => {
     if (!user) return;
 
     try {
@@ -55,31 +64,66 @@ export const useUserPreferences = (toolName: string) => {
           tool_name: toolName,
           preferences: newPreferences,
           last_used: new Date().toISOString(),
-          usage_count: 1,
+          usage_count: 1
         }, {
-          onConflict: 'user_id,tool_name',
+          onConflict: 'user_id,tool_name'
         });
 
       if (error) {
         console.error('Error saving preferences:', error);
-      } else {
-        setPreferences(newPreferences);
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder les préférences.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      setPreferences(newPreferences);
+      toast({
+        title: "Préférences sauvegardées",
+        description: `Vos préférences pour ${toolName} ont été sauvegardées.`,
+      });
     } catch (error) {
       console.error('Error saving preferences:', error);
     }
   };
 
-  const updateUsage = async () => {
+  const updateUsageCount = async () => {
     if (!user) return;
 
     try {
-      await supabase.rpc('increment_usage_count', {
-        p_user_id: user.id,
-        p_tool_name: toolName,
-      });
+      const { data, error: fetchError } = await supabase
+        .from('user_preferences')
+        .select('usage_count')
+        .eq('user_id', user.id)
+        .eq('tool_name', toolName)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching usage count:', fetchError);
+        return;
+      }
+
+      const currentCount = data?.usage_count || 0;
+
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          tool_name: toolName,
+          preferences: preferences,
+          last_used: new Date().toISOString(),
+          usage_count: currentCount + 1
+        }, {
+          onConflict: 'user_id,tool_name'
+        });
+
+      if (error) {
+        console.error('Error updating usage count:', error);
+      }
     } catch (error) {
-      console.error('Error updating usage:', error);
+      console.error('Error updating usage count:', error);
     }
   };
 
@@ -87,6 +131,6 @@ export const useUserPreferences = (toolName: string) => {
     preferences,
     loading,
     savePreferences,
-    updateUsage,
+    updateUsageCount,
   };
 };

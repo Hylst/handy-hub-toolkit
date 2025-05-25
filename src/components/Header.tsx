@@ -2,6 +2,7 @@
 import { Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
@@ -20,6 +21,7 @@ export const Header = ({ onMenuClick, activeSection, setActiveSection }: HeaderP
       case "date-calculator": return "Calculateurs de Dates";
       case "todo": return "Productivité";
       case "password-generator": return "Générateur de Mots de Passe";
+      case "qr-code": return "Générateur QR Code";
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
       case "text-utils": return "Utilitaires Texte";
@@ -28,7 +30,7 @@ export const Header = ({ onMenuClick, activeSection, setActiveSection }: HeaderP
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-4">
           <Button
@@ -52,17 +54,19 @@ export const Header = ({ onMenuClick, activeSection, setActiveSection }: HeaderP
                 Accueil
               </Button>
             )}
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">
               {getSectionTitle()}
             </h1>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="hidden md:flex items-center space-x-1 text-sm text-gray-500">
+          <div className="hidden md:flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
             <span>🛠️</span>
             <span>Outils Pratiques</span>
           </div>
+          
+          <ThemeToggle />
           
           {user ? (
             <UserMenu />

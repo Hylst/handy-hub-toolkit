@@ -11,7 +11,8 @@ import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtils } from "@/components/tools/TextUtils";
 import { DateCalculator } from "@/components/tools/DateCalculator";
-import { PasswordGenerator } from "@/components/tools/PasswordGenerator";
+import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
+import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -32,7 +33,9 @@ const Index = () => {
       case "todo":
         return <TodoList />;
       case "password-generator":
-        return <PasswordGenerator />;
+        return <PasswordGeneratorAdvanced />;
+      case "qr-code":
+        return <QRCodeGenerator />;
       case "color-generator":
         return <ColorGenerator />;
       case "bmi-calculator":
@@ -46,7 +49,7 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
                 Boîte à Outils Pratiques
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
                 Une collection d'outils utiles pour votre quotidien. Convertisseurs, calculatrices, 
                 outils de productivité et bien plus encore !
               </p>
@@ -103,10 +106,18 @@ const Index = () => {
               />
               
               <ToolSection
+                title="QR Code"
+                description="Générateur de codes QR personnalisables"
+                icon="📱"
+                tools={["Texte", "URL", "WiFi", "Contact"]}
+                onClick={() => setActiveSection("qr-code")}
+              />
+              
+              <ToolSection
                 title="Créativité"
                 description="Générateurs et outils créatifs"
                 icon="🎨"
-                tools={["Couleurs", "Texte", "QR Code", "Noms"]}
+                tools={["Couleurs", "Texte", "Design", "Noms"]}
                 onClick={() => setActiveSection("color-generator")}
               />
               
@@ -133,17 +144,17 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600 dark:text-gray-300">Chargement...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}

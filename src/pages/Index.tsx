@@ -13,6 +13,7 @@ import { TextUtils } from "@/components/tools/TextUtils";
 import { DateCalculator } from "@/components/tools/DateCalculator";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
+import { About } from "@/components/About";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
@@ -34,6 +35,7 @@ const Index = () => {
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
       case "text-utils": return "Utilitaires Texte";
+      case "about": return "À propos";
       default: return "Boîte à Outils Pratiques";
     }
   };
@@ -58,6 +60,8 @@ const Index = () => {
         return <BMICalculator />;
       case "text-utils":
         return <TextUtils />;
+      case "about":
+        return <About />;
       default:
         return (
           <div className="space-y-8">
@@ -91,17 +95,17 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <ToolSection
                 title="Convertisseurs"
-                description="Unités, devises, températures"
+                description="8 types : longueurs, poids, températures..."
                 icon="⚖️"
-                tools={["Longueurs", "Poids", "Températures", "Devises"]}
+                tools={["Longueurs", "Poids", "Températures", "Volumes", "Surfaces", "Énergie", "Vitesse", "Pression"]}
                 onClick={() => setActiveSection("unit-converter")}
               />
               
               <ToolSection
                 title="Calculatrices"
-                description="Scientifique, pourcentages, finances"
+                description="Scientifique avec saisie clavier"
                 icon="🧮"
-                tools={["Scientifique", "Pourcentages", "Dates", "Âge"]}
+                tools={["Scientifique", "Clavier", "Mémoire", "Historique"]}
                 onClick={() => setActiveSection("calculator")}
               />
               
@@ -151,6 +155,14 @@ const Index = () => {
                 icon="📝"
                 tools={["Compteur", "Formatage", "Analyse", "Nettoyage"]}
                 onClick={() => setActiveSection("text-utils")}
+              />
+              
+              <ToolSection
+                title="À propos"
+                description="Informations sur l'application"
+                icon="ℹ️"
+                tools={["Auteur", "Technologies", "Version", "Licence"]}
+                onClick={() => setActiveSection("about")}
               />
             </div>
           </div>

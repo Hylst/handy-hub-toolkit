@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings } from "lucide-react";
+import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings, Info } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +29,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
     { id: "color-generator", label: "Créativité", icon: Palette },
     { id: "bmi-calculator", label: "Santé", icon: Heart },
     { id: "text-utils", label: "Utilitaires Texte", icon: FileText },
+    { id: "about", label: "À propos", icon: Info },
   ];
 
   return (
@@ -71,8 +72,9 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
       </SidebarContent>
       
       <SidebarFooter>
-        <div className="p-2 text-center">
+        <div className="p-2 text-center space-y-1">
           <p className="text-xs text-gray-500">v1.0.0</p>
+          <p className="text-xs text-gray-400">Tous droits réservés - Geoffroy Streit</p>
         </div>
       </SidebarFooter>
     </Sidebar>

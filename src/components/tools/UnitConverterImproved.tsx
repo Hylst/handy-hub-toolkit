@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRightLeft, Info, HelpCircle, Ruler, Weight, Thermometer, Droplets, Square, Zap, Wind, Gauge } from "lucide-react";
+import { ArrowRightLeft, Info, Clock, DollarSign, Ruler, Weight, Thermometer, Droplets, Square, Zap, Wind, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -49,6 +49,16 @@ export const UnitConverterImproved = () => {
   const [pressureValue, setPressureValue] = useState("");
   const [pressureFrom, setPressureFrom] = useState("pascal");
   const [pressureTo, setPressureTo] = useState("bar");
+
+  // États pour le temps
+  const [timeValue, setTimeValue] = useState("");
+  const [timeFrom, setTimeFrom] = useState("second");
+  const [timeTo, setTimeTo] = useState("minute");
+
+  // États pour les devises
+  const [currencyValue, setCurrencyValue] = useState("");
+  const [currencyFrom, setCurrencyFrom] = useState("eur");
+  const [currencyTo, setCurrencyTo] = useState("usd");
 
   // Définitions des unités avec facteurs de conversion et descriptions détaillées
   const lengthUnits = {
@@ -138,7 +148,34 @@ export const UnitConverterImproved = () => {
     mmHg: { name: "mmHg", factor: 133.322, symbol: "mmHg", description: "Millimètre de mercure" }
   };
 
-  // Fonctions de conversion utilisant useCallback pour éviter les re-rendus
+  const timeUnits = {
+    second: { name: "Seconde", factor: 1, symbol: "s", description: "Unité de base SI pour le temps" },
+    minute: { name: "Minute", factor: 60, symbol: "min", description: "60 secondes" },
+    hour: { name: "Heure", factor: 3600, symbol: "h", description: "60 minutes = 3600 secondes" },
+    day: { name: "Jour", factor: 86400, symbol: "j", description: "24 heures = 86400 secondes" },
+    week: { name: "Semaine", factor: 604800, symbol: "sem", description: "7 jours = 604800 secondes" },
+    month: { name: "Mois", factor: 2629746, symbol: "mois", description: "30.44 jours moyens" },
+    year: { name: "Année", factor: 31556952, symbol: "an", description: "365.25 jours = 31556952 secondes" },
+    millisecond: { name: "Milliseconde", factor: 0.001, symbol: "ms", description: "1/1000 seconde" },
+    microsecond: { name: "Microseconde", factor: 0.000001, symbol: "μs", description: "1/1000000 seconde" },
+    nanosecond: { name: "Nanoseconde", factor: 0.000000001, symbol: "ns", description: "1/1000000000 seconde" }
+  };
+
+  // Taux de change approximatifs (dans une vraie app, utiliser une API)
+  const currencyUnits = {
+    eur: { name: "Euro", factor: 1, symbol: "€", description: "Devise européenne" },
+    usd: { name: "Dollar US", factor: 1.08, symbol: "$", description: "Dollar américain" },
+    gbp: { name: "Livre Sterling", factor: 0.85, symbol: "£", description: "Devise britannique" },
+    jpy: { name: "Yen Japonais", factor: 161.50, symbol: "¥", description: "Devise japonaise" },
+    chf: { name: "Franc Suisse", factor: 0.93, symbol: "CHF", description: "Devise suisse" },
+    cad: { name: "Dollar Canadien", factor: 1.51, symbol: "CAD", description: "Dollar canadien" },
+    aud: { name: "Dollar Australien", factor: 1.66, symbol: "AUD", description: "Dollar australien" },
+    cny: { name: "Yuan Chinois", factor: 7.85, symbol: "¥", description: "Devise chinoise" },
+    inr: { name: "Roupie Indienne", factor: 91.20, symbol: "₹", description: "Devise indienne" },
+    brl: { name: "Real Brésilien", factor: 6.09, symbol: "R$", description: "Devise brésilienne" }
+  };
+
+  // Fonctions de conversion utilisant useCallback pour éviter les re-rendus et corriger le bug d'input
   const convertLength = useCallback(() => {
     if (!lengthValue || isNaN(parseFloat(lengthValue))) return "";
     const fromFactor = lengthUnits[lengthFrom as keyof typeof lengthUnits].factor;
@@ -246,6 +283,22 @@ export const UnitConverterImproved = () => {
     return formatResult(result);
   }, [pressureValue, pressureFrom, pressureTo]);
 
+  const convertTime = useCallback(() => {
+    if (!timeValue || isNaN(parseFloat(timeValue))) return "";
+    const fromFactor = timeUnits[timeFrom as keyof typeof timeUnits].factor;
+    const toFactor = timeUnits[timeTo as keyof typeof timeUnits].factor;
+    const result = (parseFloat(timeValue) * fromFactor) / toFactor;
+    return formatResult(result);
+  }, [timeValue, timeFrom, timeTo]);
+
+  const convertCurrency = useCallback(() => {
+    if (!currencyValue || isNaN(parseFloat(currencyValue))) return "";
+    const fromFactor = currencyUnits[currencyFrom as keyof typeof currencyUnits].factor;
+    const toFactor = currencyUnits[currencyTo as keyof typeof currencyUnits].factor;
+    const result = (parseFloat(currencyValue) * fromFactor) / toFactor;
+    return formatResult(result);
+  }, [currencyValue, currencyFrom, currencyTo]);
+
   const formatResult = (result: number) => {
     if (result === 0) return "0";
     if (Math.abs(result) >= 1e12) {
@@ -300,10 +353,20 @@ export const UnitConverterImproved = () => {
         setPressureFrom(pressureTo);
         setPressureTo(tempPressure);
         break;
+      case "time":
+        const tempTime = timeFrom;
+        setTimeFrom(timeTo);
+        setTimeTo(tempTime);
+        break;
+      case "currency":
+        const tempCurrency = currencyFrom;
+        setCurrencyFrom(currencyTo);
+        setCurrencyTo(tempCurrency);
+        break;
     }
   };
 
-  // Composant de conversion générique avec corrections pour le mode sombre
+  // Composant de conversion générique avec corrections pour le contraste en mode sombre
   const ConversionCard = ({ 
     title, 
     icon,
@@ -316,10 +379,11 @@ export const UnitConverterImproved = () => {
     units, 
     convertFunction, 
     swapType,
-    color = "blue"
+    color = "blue",
+    explanationText
   }: any) => (
     <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
-      <CardHeader className={`bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-950 dark:to-${color}-900`}>
+      <CardHeader className={`bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-950/50 dark:to-${color}-900/50`}>
         <CardTitle className="flex items-center gap-3">
           <div className={`p-2 bg-${color}-100 dark:bg-${color}-800 rounded-full`}>
             {icon}
@@ -410,22 +474,34 @@ export const UnitConverterImproved = () => {
           </Select>
         </div>
         
-        <div className={`p-6 bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900/30 dark:to-${color}-800/30 rounded-xl border-2 border-${color}-200 dark:border-${color}-700`}>
+        <div className={`p-6 bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900/40 dark:to-${color}-800/40 rounded-xl border-2 border-${color}-200 dark:border-${color}-700`}>
           <div className="flex items-center gap-2 mb-3">
             <div className={`p-1 bg-${color}-200 dark:bg-${color}-700 rounded-full`}>
               <Info className={`w-4 h-4 text-${color}-600 dark:text-${color}-300`} />
             </div>
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Résultat de la conversion</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-100">Résultat de la conversion</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono break-all">
+          <p className="text-3xl font-bold text-gray-900 dark:text-white font-mono break-all">
             {convertFunction()} {units[toUnit]?.symbol}
           </p>
           {value && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-sm text-gray-600 dark:text-gray-200 mt-2">
               {value} {units[fromUnit]?.symbol} = {convertFunction()} {units[toUnit]?.symbol}
             </p>
           )}
         </div>
+
+        {explanationText && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium mb-1">Notes importantes :</p>
+                <div className="space-y-1">{explanationText}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -433,7 +509,7 @@ export const UnitConverterImproved = () => {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <div className="text-center space-y-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl border-2 border-blue-200">
+        <div className="text-center space-y-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-xl border-2 border-blue-200 dark:border-blue-800">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
             Convertisseurs d'Unités Professionnels
           </h1>
@@ -442,15 +518,15 @@ export const UnitConverterImproved = () => {
             Tous les calculs sont basés sur les standards internationaux officiels.
           </p>
           <div className="flex justify-center gap-2 flex-wrap">
-            <Badge variant="secondary">8 types de conversions</Badge>
-            <Badge variant="secondary">60+ unités disponibles</Badge>
+            <Badge variant="secondary">10 types de conversions</Badge>
+            <Badge variant="secondary">80+ unités disponibles</Badge>
             <Badge variant="secondary">Précision scientifique</Badge>
             <Badge variant="secondary">Standards SI</Badge>
           </div>
         </div>
 
         <Tabs defaultValue="length" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 text-xs bg-gray-100 dark:bg-gray-800">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 text-xs bg-gray-100 dark:bg-gray-800">
             <TabsTrigger value="length" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-300">
               <Ruler className="w-4 h-4 mr-1" />
               Longueurs
@@ -483,6 +559,14 @@ export const UnitConverterImproved = () => {
               <Gauge className="w-4 h-4 mr-1" />
               Pression
             </TabsTrigger>
+            <TabsTrigger value="time" className="data-[state=active]:bg-cyan-100 data-[state=active]:text-cyan-700 dark:data-[state=active]:bg-cyan-900 dark:data-[state=active]:text-cyan-300">
+              <Clock className="w-4 h-4 mr-1" />
+              Temps
+            </TabsTrigger>
+            <TabsTrigger value="currency" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900 dark:data-[state=active]:text-emerald-300">
+              <DollarSign className="w-4 h-4 mr-1" />
+              Devises
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="length">
@@ -499,6 +583,13 @@ export const UnitConverterImproved = () => {
               convertFunction={convertLength}
               swapType="length"
               color="blue"
+              explanationText={
+                <>
+                  <p>• Les conversions sont basées sur le système international (SI)</p>
+                  <p>• Le mètre est l'unité de référence définie par la vitesse de la lumière</p>
+                  <p>• Les unités astronomiques (année-lumière) utilisent des approximations</p>
+                </>
+              }
             />
           </TabsContent>
           
@@ -516,12 +607,20 @@ export const UnitConverterImproved = () => {
               convertFunction={convertWeight}
               swapType="weight"
               color="green"
+              explanationText={
+                <>
+                  <p>• Distinction importante : poids (force) vs masse (quantité de matière)</p>
+                  <p>• Sur Terre, 1 kg de masse = 9.81 N de poids</p>
+                  <p>• Les conversions ici concernent la masse, pas le poids</p>
+                  <p>• Le carat métrique (200 mg) diffère du carat de pureté de l'or</p>
+                </>
+              }
             />
           </TabsContent>
           
           <TabsContent value="temperature">
             <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
+              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50">
                 <CardTitle className="flex items-center gap-3">
                   <div className="p-2 bg-orange-100 dark:bg-orange-800 rounded-full">
                     <Thermometer className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -594,14 +693,14 @@ export const UnitConverterImproved = () => {
                   </Select>
                 </div>
                 
-                <div className="p-6 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 rounded-xl border-2 border-orange-200 dark:border-orange-700">
+                <div className="p-6 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/40 dark:to-red-900/40 rounded-xl border-2 border-orange-200 dark:border-orange-700">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-1 bg-orange-200 dark:bg-orange-700 rounded-full">
                       <Info className="w-4 h-4 text-orange-600 dark:text-orange-300" />
                     </div>
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Résultat de la conversion</p>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-100">Résultat de la conversion</p>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
                     {convertTemperature()}{tempTo !== 'kelvin' ? '°' : ''} {temperatureUnits[tempTo as keyof typeof temperatureUnits]?.symbol?.replace('°', '')}
                   </p>
                   {tempValue && (
@@ -612,6 +711,21 @@ export const UnitConverterImproved = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400">• Zéro absolu: -273.15°C = -459.67°F = 0K</p>
                     </div>
                   )}
+                </div>
+
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">Notes importantes :</p>
+                      <div className="space-y-1">
+                        <p>• Kelvin est l'unité SI absolue (pas de valeurs négatives)</p>
+                        <p>• Rankine = Kelvin mais avec l'échelle Fahrenheit</p>
+                        <p>• Réaumur était utilisé en Europe avant Celsius</p>
+                        <p>• Les conversions sont exactes selon les définitions officielles</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -631,6 +745,14 @@ export const UnitConverterImproved = () => {
               convertFunction={convertVolume}
               swapType="volume"
               color="purple"
+              explanationText={
+                <>
+                  <p>• 1 litre = 1 dm³ par définition (valide pour tous les fluides)</p>
+                  <p>• Gallon US ≠ Gallon UK (différence de 20%)</p>
+                  <p>• Les conversions culinaires peuvent varier selon les ingrédients</p>
+                  <p>• Volume ≠ capacité (le volume dépend de la température)</p>
+                </>
+              }
             />
           </TabsContent>
           
@@ -648,6 +770,14 @@ export const UnitConverterImproved = () => {
               convertFunction={convertArea}
               swapType="area"
               color="teal"
+              explanationText={
+                <>
+                  <p>• 1 hectare = 10 000 m² (carré de 100m de côté)</p>
+                  <p>• 1 acre ≈ 4047 m² (surface historique anglo-saxonne)</p>
+                  <p>• Les surfaces courbes nécessitent des calculs spécialisés</p>
+                  <p>• Attention aux confusions : are (100 m²) vs acre</p>
+                </>
+              }
             />
           </TabsContent>
           
@@ -665,6 +795,14 @@ export const UnitConverterImproved = () => {
               convertFunction={convertEnergy}
               swapType="energy"
               color="yellow"
+              explanationText={
+                <>
+                  <p>• Calorie nutritionnelle = kilocalorie (1000 cal thermiques)</p>
+                  <p>• kWh = unité de facturation électrique (3.6 MJ)</p>
+                  <p>• BTU = énergie pour chauffer 1 livre d'eau de 1°F</p>
+                  <p>• Énergie ≠ puissance (Joule vs Watt)</p>
+                </>
+              }
             />
           </TabsContent>
           
@@ -682,6 +820,14 @@ export const UnitConverterImproved = () => {
               convertFunction={convertSpeed}
               swapType="speed"
               color="red"
+              explanationText={
+                <>
+                  <p>• Nœud = vitesse maritime (1 mille nautique/heure)</p>
+                  <p>• Mach varie avec la température et l'altitude</p>
+                  <p>• Vitesse de la lumière ≈ 299 792 458 m/s (constante physique)</p>
+                  <p>• Les limitations de vitesse dépendent du contexte local</p>
+                </>
+              }
             />
           </TabsContent>
           
@@ -699,6 +845,64 @@ export const UnitConverterImproved = () => {
               convertFunction={convertPressure}
               swapType="pressure"
               color="indigo"
+              explanationText={
+                <>
+                  <p>• 1 bar ≈ pression atmosphérique au niveau de la mer</p>
+                  <p>• PSI = pression des pneus, compresseurs (livres/pouce²)</p>
+                  <p>• mmHg = pression artérielle, baromètres à mercure</p>
+                  <p>• Attention : pression absolue vs relative (manométrique)</p>
+                </>
+              }
+            />
+          </TabsContent>
+
+          <TabsContent value="time">
+            <ConversionCard
+              title="Convertisseur de Temps"
+              icon={<Clock className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />}
+              value={timeValue}
+              setValue={setTimeValue}
+              fromUnit={timeFrom}
+              setFromUnit={setTimeFrom}
+              toUnit={timeTo}
+              setToUnit={setTimeTo}
+              units={timeUnits}
+              convertFunction={convertTime}
+              swapType="time"
+              color="cyan"
+              explanationText={
+                <>
+                  <p>• 1 année = 365.25 jours (incluant les années bissextiles)</p>
+                  <p>• 1 mois ≈ 30.44 jours (moyenne calendaire)</p>
+                  <p>• Les durées astronomiques varient (année tropique, sidérale...)</p>
+                  <p>• Attention aux fuseaux horaires pour les calculs de dates</p>
+                </>
+              }
+            />
+          </TabsContent>
+
+          <TabsContent value="currency">
+            <ConversionCard
+              title="Convertisseur de Devises"
+              icon={<DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
+              value={currencyValue}
+              setValue={setCurrencyValue}
+              fromUnit={currencyFrom}
+              setFromUnit={setCurrencyFrom}
+              toUnit={currencyTo}
+              setToUnit={setCurrencyTo}
+              units={currencyUnits}
+              convertFunction={convertCurrency}
+              swapType="currency"
+              color="emerald"
+              explanationText={
+                <>
+                  <p>• ⚠️ Taux de change approximatifs - Non utilisables pour transactions réelles</p>
+                  <p>• Les taux fluctuent constamment selon les marchés financiers</p>
+                  <p>• Pour des conversions précises, consultez votre banque ou des API financières</p>
+                  <p>• Les frais de change et commissions ne sont pas inclus</p>
+                </>
+              }
             />
           </TabsContent>
         </Tabs>

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,18 @@ import { Download, Share2, Copy, Smartphone, Wifi, Mail, Phone, MessageSquare, G
 import { toast } from "@/hooks/use-toast";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 
+type QRErrorCorrectionLevel = "L" | "M" | "Q" | "H";
+
+interface QROptions {
+  errorCorrectionLevel: QRErrorCorrectionLevel;
+  width: number;
+  margin: number;
+  color: {
+    dark: string;
+    light: string;
+  };
+}
+
 export const QRCodeGenerator = () => {
   const [qrData, setQrData] = useState("");
   const [qrImage, setQrImage] = useState("");
@@ -21,7 +32,7 @@ export const QRCodeGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Customization options
-  const [qrOptions, setQrOptions] = useState({
+  const [qrOptions, setQrOptions] = useState<QROptions>({
     errorCorrectionLevel: "M",
     width: 300,
     margin: 4,
@@ -108,7 +119,7 @@ export const QRCodeGenerator = () => {
     savePreferences({ ...preferences, activeTab: newTab });
   };
 
-  const handleOptionsChange = (newOptions: any) => {
+  const handleOptionsChange = (newOptions: Partial<QROptions>) => {
     const updatedOptions = { ...qrOptions, ...newOptions };
     setQrOptions(updatedOptions);
     savePreferences({ ...preferences, qrOptions: updatedOptions });
@@ -445,7 +456,7 @@ export const QRCodeGenerator = () => {
                   <Label htmlFor="qr-correction">Correction d'erreur</Label>
                   <Select 
                     value={qrOptions.errorCorrectionLevel} 
-                    onValueChange={(value) => handleOptionsChange({ errorCorrectionLevel: value })}
+                    onValueChange={(value: QRErrorCorrectionLevel) => handleOptionsChange({ errorCorrectionLevel: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -371,7 +370,7 @@ export const UnitConverterFixed = () => {
     if (!value || isNaN(parseFloat(value))) return "";
     
     const fromFactor = timeUnits[timeFrom as keyof typeof timeUnits].factor;
-    const toFactor = timeUnits[timeTo as keyof typeof timeUnits].factor;
+    const toFactor = timeUnits[timeTo as keyof typeof timeTo].factor;
     const result = (parseFloat(value) * fromFactor) / toFactor;
     
     return result.toFixed(6).replace(/\.?0+$/, "");
@@ -464,26 +463,148 @@ export const UnitConverterFixed = () => {
     }
   };
 
-  // Notices explicatives pour chaque convertisseur
-  const getExplanatoryNote = (type: string, fromUnit: string, toUnit: string) => {
-    const notes: { [key: string]: string } = {
-      length: "Les conversions astronomiques (année-lumière, unité astronomique) sont approximatives. 1 AL ≈ 9,461 × 10¹⁵ m.",
-      weight: "Les conversions incluent les systèmes métrique, impérial et US. Le carat est utilisé pour les pierres précieuses (1 ct = 0,2 g).",
-      temperature: "Les conversions sont exactes selon les formules officielles. Le point de congélation de l'eau : 0°C = 32°F = 273,15 K.",
-      volume: "⚠️ Les conversions L ↔ m³ sont valables pour l'eau (densité = 1). Pour d'autres substances, multiplier par leur densité.",
-      area: "Les conversions foncières varient selon les pays. L'acre US (4047 m²) diffère de l'acre écossais (5067 m²).",
-      energy: "1 calorie = 4,184 J (calorie thermochimique). Les calories alimentaires sont en fait des kilocalories (kcal).",
-      speed: "Mach varie selon l'altitude et la température (≈ 343 m/s au niveau de la mer à 20°C). Vitesse de la lumière dans le vide.",
-      pressure: "Les conversions météorologiques : 1 atm = 1013,25 mbar = 760 mmHg = 29,92 inHg à 0°C.",
-      power: "Cheval-vapeur : HP (US) ≠ PS (métrique). 1 HP = 745,7 W, 1 PS = 735,5 W.",
-      time: "Les mois sont calculés sur 30 jours, les années sur 365 jours. Pour plus de précision, utiliser les dates calendaires.",
-      currency: "💱 Taux de change indicatifs et non temps réel. Consultez votre banque pour les taux officiels actuels.",
-      data: "Distinction binaire : KB = 1024 B vs kB = 1000 B. Les fabricants utilisent souvent la base 10 (kB, MB, GB)."
-    };
-    return notes[type] || "";
+  /**
+   * Génère une notice explicative détaillée selon le type de conversion et les unités utilisées.
+   * Cette fonction prend en compte les conditions spéciales et interprétations nécessaires.
+   * 
+   * @param type - Type de conversion (length, weight, temperature, etc.)
+   * @param fromUnit - Unité source
+   * @param toUnit - Unité cible
+   * @returns Notice explicative formatée en HTML
+   */
+  const getDetailedExplanatoryNote = (type: string, fromUnit: string, toUnit: string) => {
+    const conversionPair = `${fromUnit}_to_${toUnit}`;
+    
+    switch (type) {
+      case "length":
+        const lengthNotes: { [key: string]: string } = {
+          meter_to_light_year: "⚠️ Conversion astronomique approximative. 1 année-lumière = distance parcourue par la lumière en 1 an dans le vide (≈ 9,461 × 10¹⁵ m).",
+          light_year_to_meter: "🌌 Une année-lumière représente environ 63 241 unités astronomiques ou 9 461 milliards de kilomètres.",
+          meter_to_astronomical_unit: "🪐 L'unité astronomique correspond à la distance moyenne Terre-Soleil (≈ 149,6 millions de km).",
+          inch_to_meter: "📏 Conversion système impérial → métrique. 1 pouce = exactement 2,54 cm selon la définition internationale.",
+          foot_to_meter: "👣 Le pied international = 12 pouces = 30,48 cm exactement (défini en 1959).",
+          mile_to_kilometer: "🛣️ Mile terrestre US = 5280 pieds. Attention : différent du mile nautique (1852 m).",
+          nautical_mile_to_meter: "⚓ Mile nautique = 1/60 de degré de latitude = 1852 m exactement (navigation maritime et aérienne)."
+        };
+        return lengthNotes[conversionPair] || "📐 Conversions de longueur basées sur le système international d'unités (SI). Les valeurs astronomiques sont approximatives.";
+
+      case "weight":
+        const weightNotes: { [key: string]: string } = {
+          pound_to_kilogram: "⚖️ Livre internationale (avoirdupois) = 453,592338 g exactement. Utilisée aux USA, UK, Canada.",
+          ounce_to_gram: "🥄 Once avoirdupois = 1/16 livre = 28,3495 g. Attention : différent de l'once troy (31,1035 g) pour métaux précieux.",
+          stone_to_kilogram: "🇬🇧 Stone britannique = 14 livres = 6,35029 kg. Encore utilisé au Royaume-Uni pour le poids corporel.",
+          carat_to_gram: "💎 Carat métrique = 200 mg exactement. Utilisé exclusivement pour les pierres précieuses et perles.",
+          ton_to_kilogram: "🚛 Tonne métrique = 1000 kg. Attention : tonne US (907 kg) et tonne UK (1016 kg) sont différentes.",
+          short_ton_to_kilogram: "🇺🇸 Tonne courte américaine = 2000 livres = 907,185 kg (système avoirdupois).",
+          long_ton_to_kilogram: "🇬🇧 Tonne longue britannique = 2240 livres = 1016,047 kg (système impérial)."
+        };
+        return weightNotes[conversionPair] || "⚖️ Conversions de masse. Attention aux différences entre systèmes métrique, impérial et US.";
+
+      case "temperature":
+        const tempNotes: { [key: string]: string } = {
+          celsius_to_fahrenheit: "🌡️ °F = (°C × 9/5) + 32. Points de référence : 0°C = 32°F (congélation), 100°C = 212°F (ébullition de l'eau).",
+          fahrenheit_to_celsius: "🧊 °C = (°F - 32) × 5/9. Échelle Fahrenheit : 32°F (glace) à 212°F (vapeur d'eau) = 180 divisions.",
+          celsius_to_kelvin: "❄️ K = °C + 273,15. Kelvin = échelle absolue (0 K = zéro absolu = -273,15°C).",
+          kelvin_to_celsius: "🔬 Échelle thermodynamique internationale. 0 K = arrêt complet du mouvement moléculaire.",
+          celsius_to_rankine: "🇺🇸 °R = (°C + 273,15) × 9/5. Rankine = Kelvin en degrés Fahrenheit (échelle absolue US).",
+          reaumur_to_celsius: "📚 Échelle Réaumur historique : 0°Ré (glace) à 80°Ré (ébullition). °C = °Ré × 5/4."
+        };
+        return tempNotes[conversionPair] || "🌡️ Conversions de température selon les formules officielles. Points de référence : glace (0°C) et ébullition (100°C) de l'eau pure.";
+
+      case "volume":
+        const volumeNotes: { [key: string]: string } = {
+          liter_to_cubic_meter: "⚠️ 1 L = 1 dm³ = 0,001 m³. ATTENTION : Cette équivalence est valable pour l'eau pure à 4°C. Pour d'autres liquides, multiplier par leur densité relative.",
+          cubic_meter_to_liter: "🧪 1 m³ = 1000 L pour l'eau. Pour autres substances : Volume(L) = Volume(m³) × 1000 × densité_relative.",
+          gallon_us_to_liter: "🇺🇸 Gallon liquide US = 3,785411784 L exactement. Différent du gallon impérial (4,546 L).",
+          gallon_uk_to_liter: "🇬🇧 Gallon impérial = 4,54609 L exactement. Utilisé au Royaume-Uni, Canada, certains pays du Commonwealth.",
+          cup_to_milliliter: "☕ Tasse US légale = 240 mL. Attention : tasse métrique = 250 mL, tasse UK = 284 mL.",
+          tablespoon_to_milliliter: "🥄 Cuillère à soupe US = 14,7868 mL ≈ 15 mL. Variable selon pays : AU = 20 mL, UK = 17,7 mL.",
+          teaspoon_to_milliliter: "🥄 Cuillère à café US = 4,929 mL ≈ 5 mL. Standard international culinaire ≈ 5 mL."
+        };
+        return volumeNotes[conversionPair] || "💧 Conversions de volume. IMPORTANT : L ↔ m³ valable pour l'eau uniquement (densité = 1). Pour autres liquides, appliquer la densité.";
+
+      case "area":
+        const areaNotes: { [key: string]: string } = {
+          hectare_to_square_meter: "🌾 Hectare = 10 000 m² = surface d'un carré de 100 m de côté. Unité agricole et forestière standard.",
+          acre_to_square_meter: "🇺🇸 Acre US = 4046,86 m² ≈ 0,4047 ha. ATTENTION : Acre écossais = 5067 m², acre irlandais = 6555 m².",
+          square_mile_to_square_kilometer: "🗺️ Mile carré = (1 mile)² = 2,59 km². Utilisé pour surfaces importantes (villes, pays).",
+          square_foot_to_square_meter: "🏠 Pied carré = (12 pouces)² = 929,03 cm². Unité immobilière courante aux USA.",
+          are_to_square_meter: "📐 Are = 100 m² = surface d'un carré de 10 m de côté. 1 hectare = 100 ares."
+        };
+        return areaNotes[conversionPair] || "📐 Conversions de surface. Attention : les unités foncières varient selon les pays (acre US ≠ acre UK).";
+
+      case "energy":
+        const energyNotes: { [key: string]: string } = {
+          calorie_to_joule: "🔥 Calorie thermochimique = 4,184 J exactement. ATTENTION : Calorie alimentaire = 1 kcal = 4184 J.",
+          kilocalorie_to_joule: "🍎 Kilocalorie (Cal alimentaire) = 1000 cal = 4184 J. C'est l'unité des étiquettes nutritionnelles.",
+          kilowatt_hour_to_joule: "⚡ kWh = 3,6 MJ. Unité de facturation électrique : 1 kWh ≈ coût de fonctionnement d'un radiateur 1 kW pendant 1 heure.",
+          btu_to_joule: "🇺🇸 BTU (British Thermal Unit) = énergie pour élever 1 livre d'eau de 1°F = 1055,06 J.",
+          therm_to_joule: "🏠 Therm = 100 000 BTU ≈ 105,5 MJ. Unité de facturation du gaz naturel aux USA.",
+          foot_pound_to_joule: "🔧 Pied-livre-force = travail d'une force de 1 lbf sur 1 pied = 1,356 J. Unité mécanique anglo-saxonne."
+        };
+        return energyNotes[conversionPair] || "⚡ Conversions d'énergie. Note : Calories alimentaires = kcal (1000 cal). 1 kWh = consommation typique d'un appareil de 1000W pendant 1h.";
+
+      case "speed":
+        const speedNotes: { [key: string]: string } = {
+          kilometer_per_hour_to_meter_per_second: "🚗 Conversion : km/h ÷ 3,6 = m/s. Ex: 36 km/h = 10 m/s, 72 km/h = 20 m/s.",
+          mile_per_hour_to_kilometer_per_hour: "🇺🇸 Mile/h → km/h : multiplier par 1,609344. Limitations routières US souvent en mph.",
+          knot_to_meter_per_second: "⛵ Nœud (navigation) = 1 mile nautique/heure = 0,514444 m/s. 1 nœud ≈ 1,852 km/h.",
+          mach_to_meter_per_second: "✈️ Mach 1 ≈ 343 m/s (vitesse du son à 20°C au niveau de la mer). Variable selon altitude et température.",
+          speed_of_light_to_meter_per_second: "🌌 Vitesse de la lumière dans le vide = 299 792 458 m/s exactement (constante physique fondamentale)."
+        };
+        return speedNotes[conversionPair] || "🏃 Conversions de vitesse. Note : Mach varie avec l'altitude/température. 1 nœud = 1 mile nautique/heure.";
+
+      case "pressure":
+        const pressureNotes: { [key: string]: string } = {
+          bar_to_pascal: "🌀 Bar = 100 000 Pa = pression atmosphérique standard ≈ 1,013 bar. Unité météorologique courante.",
+          atmosphere_to_pascal: "🌍 Atmosphère standard = 101 325 Pa = pression au niveau de la mer à 15°C. Référence internationale.",
+          psi_to_pascal: "🇺🇸 PSI (pounds per square inch) = 6894,76 Pa. Unité US pour pneus, hydraulique, pneumatique.",
+          mmhg_to_pascal: "🩺 mmHg (Torr) = 133,322 Pa. Unité médicale (tension artérielle) et météorologique historique.",
+          inhg_to_pascal: "🌡️ Pouce de mercure = 3386,39 Pa. Unité météorologique US (pression barométrique).",
+          millibar_to_pascal: "☁️ Millibar = 100 Pa. Unité météorologique : 1013,25 mbar = pression atmosphérique standard."
+        };
+        return pressureNotes[conversionPair] || "🌀 Conversions de pression. Références : 1 atm = 1013,25 mbar = 760 mmHg = 14,7 psi (conditions standard).";
+
+      case "power":
+        const powerNotes: { [key: string]: string } = {
+          horsepower_to_watt: "🐎 Cheval-vapeur mécanique (HP) = 745,7 W. ATTENTION : PS métrique = 735,5 W (différent!).",
+          metric_horsepower_to_watt: "🇪🇺 Cheval-vapeur métrique (PS/ch/CV) = 735,499 W. Standard européen, différent du HP anglo-saxon.",
+          kilowatt_to_watt: "⚡ kW = 1000 W. Référence : 1 kW ≈ puissance d'un radiateur électrique domestique.",
+          btu_per_hour_to_watt: "❄️ BTU/h = 0,293 W. Unité de climatisation US : 12 000 BTU/h = 1 tonne de réfrigération.",
+          megawatt_to_watt: "🏭 MW = 1 000 000 W = puissance d'une petite centrale électrique ou d'une grosse éolienne."
+        };
+        return powerNotes[conversionPair] || "⚡ Conversions de puissance. Important : HP américain (745,7 W) ≠ PS européen (735,5 W).";
+
+      case "time":
+        const timeNotes: { [key: string]: string } = {
+          year_to_day: "📅 Année = 365 jours (année commune). Année bissextile = 366 jours. Année tropique = 365,2422 jours.",
+          month_to_day: "🗓️ Mois conventionnel = 30 jours. RÉALITÉ : 28-31 jours selon mois et année bissextile.",
+          week_to_day: "📆 Semaine = 7 jours exactement. Standard international depuis calendrier julien.",
+          day_to_hour: "🌅 Jour = 24 heures exactement (jour solaire moyen). Jour sidéral = 23h 56min 4s.",
+          hour_to_minute: "🕐 Heure = 60 minutes = 3600 secondes. Division babylonienne en base 60.",
+          minute_to_second: "⏱️ Minute = 60 secondes. Seconde = durée de 9 192 631 770 périodes de radiation du césium-133."
+        };
+        return timeNotes[conversionPair] || "⏰ Conversions temporelles conventionnelles. Note : mois réels = 28-31 jours, années bissextiles = 366 jours.";
+
+      case "currency":
+        return "💱 ATTENTION : Taux de change INDICATIFS et NON temps réel. Les taux fluctuent constamment. Consultez votre banque ou un service financier pour les taux officiels actuels. Frais de change non inclus.";
+
+      case "data":
+        const dataNotes: { [key: string]: string } = {
+          kilobyte_to_byte: "💾 Ambiguïté historique : KB = 1024 B (binaire) ou 1000 B (décimal). Standard SI = 1000, mais OS souvent 1024.",
+          megabyte_to_byte: "💿 MB : 1 000 000 B (fabricants) vs 1 048 576 B (système). D'où écart capacité annoncée/réelle des disques.",
+          gigabyte_to_byte: "💽 GB : 1 milliard B (marketing) vs 1 073 741 824 B (binaire). Différence ≈ 7% sur disques durs.",
+          kibibyte_to_byte: "🔢 KiB (kibioctet) = 1024 B exactement. Standard IEC pour éviter confusion avec kB décimal.",
+          bit_to_byte: "🔢 8 bits = 1 octet (byte). Bit = plus petite unité d'information (0 ou 1)."
+        };
+        return dataNotes[conversionPair] || "💾 Confusion fréquente : fabricants utilisent base 10 (kB=1000B) mais systèmes base 2 (KB=1024B). Standard IEC : KiB, MiB, GiB (binaire).";
+
+      default:
+        return "ℹ️ Conversion standard basée sur les facteurs de conversion officiels.";
+    }
   };
 
-  // Composant de conversion générique amélioré
+  // Composant de conversion générique avec notice détaillée
   const ConversionCard = ({ 
     title, 
     icon,
@@ -505,7 +626,7 @@ export const UnitConverterFixed = () => {
             {icon}
           </div>
           {title}
-          <Badge variant="secondary" className="text-xs">Amélioré</Badge>
+          <Badge variant="secondary" className="text-xs">Documentation améliorée</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
@@ -596,10 +717,12 @@ export const UnitConverterFixed = () => {
           )}
         </div>
 
-        <Alert className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-sm text-gray-700 dark:text-gray-300">
-            {getExplanatoryNote(swapType, fromUnit, toUnit)}
+        <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+          <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div dangerouslySetInnerHTML={{ 
+              __html: getDetailedExplanatoryNote(swapType, fromUnit, toUnit)
+            }} />
           </AlertDescription>
         </Alert>
 
@@ -632,17 +755,17 @@ export const UnitConverterFixed = () => {
     <div className="space-y-6">
       <div className="text-center space-y-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-xl border-2 border-blue-200 dark:border-blue-800">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-          Convertisseur d'Unités Complet - Version Améliorée
+          Convertisseur d'Unités Professionnel - Documentation Complète
         </h1>
-        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          12 catégories de conversion avec gestion fixe des inputs, meilleure lisibilité et notices explicatives détaillées.
+        <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          12 catégories de conversion avec notices explicatives détaillées, conditions d'utilisation et précisions sur les interprétations spécifiques de chaque conversion.
         </p>
         <div className="flex justify-center gap-2 flex-wrap">
-          <Badge variant="secondary">✅ Input corrigé</Badge>
-          <Badge variant="secondary">🌙 Mode sombre optimisé</Badge>
-          <Badge variant="secondary">📚 Notices explicatives</Badge>
-          <Badge variant="secondary">💱 Devises incluses</Badge>
-          <Badge variant="secondary">💾 Données numériques</Badge>
+          <Badge variant="secondary">📚 Documentation améliorée</Badge>
+          <Badge variant="secondary">⚠️ Conditions spécifiques</Badge>
+          <Badge variant="secondary">🔍 Précisions techniques</Badge>
+          <Badge variant="secondary">🌍 Standards internationaux</Badge>
+          <Badge variant="secondary">💡 Conseils d'usage</Badge>
         </div>
       </div>
 
@@ -700,7 +823,7 @@ export const UnitConverterFixed = () => {
         
         <TabsContent value="length">
           <ConversionCard
-            title="Convertisseur de Longueurs"
+            title="Convertisseur de Longueurs - Précision Métrique et Astronomique"
             icon={<Ruler className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
             inputValue={lengthInput}
             setInputValue={setLengthInput}
@@ -717,7 +840,7 @@ export const UnitConverterFixed = () => {
         
         <TabsContent value="weight">
           <ConversionCard
-            title="Convertisseur de Poids"
+            title="Convertisseur de Poids - Systèmes Métrique, Impérial et US"
             icon={<Weight className="w-5 h-5 text-green-600 dark:text-green-400" />}
             inputValue={weightInput}
             setInputValue={setWeightInput}
@@ -734,7 +857,7 @@ export const UnitConverterFixed = () => {
         
         <TabsContent value="temperature">
           <ConversionCard
-            title="Convertisseur de Température"
+            title="Convertisseur de Température - Échelles Scientifiques et Pratiques"
             icon={<Thermometer className="w-5 h-5 text-orange-600 dark:text-orange-400" />}
             inputValue={tempInput}
             setInputValue={setTempInput}
@@ -751,7 +874,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="volume">
           <ConversionCard
-            title="Convertisseur de Volume"
+            title="Convertisseur de Volume - Attention aux Densités"
             icon={<Droplets className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />}
             inputValue={volumeInput}
             setInputValue={setVolumeInput}
@@ -768,7 +891,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="area">
           <ConversionCard
-            title="Convertisseur de Surface"
+            title="Convertisseur de Surface - Unités Foncières Internationales"
             icon={<Square className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
             inputValue={areaInput}
             setInputValue={setAreaInput}
@@ -785,7 +908,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="energy">
           <ConversionCard
-            title="Convertisseur d'Énergie"
+            title="Convertisseur d'Énergie - Thermique, Électrique et Mécanique"
             icon={<Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />}
             inputValue={energyInput}
             setInputValue={setEnergyInput}
@@ -802,7 +925,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="speed">
           <ConversionCard
-            title="Convertisseur de Vitesse"
+            title="Convertisseur de Vitesse - Navigation, Automobile et Aéronautique"
             icon={<Wind className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
             inputValue={speedInput}
             setInputValue={setSpeedInput}
@@ -819,7 +942,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="pressure">
           <ConversionCard
-            title="Convertisseur de Pression"
+            title="Convertisseur de Pression - Météorologie, Mécanique et Médical"
             icon={<Gauge className="w-5 h-5 text-red-600 dark:text-red-400" />}
             inputValue={pressureInput}
             setInputValue={setPressureInput}
@@ -836,7 +959,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="power">
           <ConversionCard
-            title="Convertisseur de Puissance"
+            title="Convertisseur de Puissance - Moteurs et Électricité"
             icon={<Zap className="w-5 h-5 text-pink-600 dark:text-pink-400" />}
             inputValue={powerInput}
             setInputValue={setPowerInput}
@@ -853,7 +976,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="time">
           <ConversionCard
-            title="Convertisseur de Temps"
+            title="Convertisseur de Temps - Calendaires et Scientifiques"
             icon={<Clock className="w-5 h-5 text-teal-600 dark:text-teal-400" />}
             inputValue={timeInput}
             setInputValue={setTimeInput}
@@ -870,7 +993,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="currency">
           <ConversionCard
-            title="Convertisseur de Devises"
+            title="Convertisseur de Devises - Taux Indicatifs Non Temps Réel"
             icon={<DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
             inputValue={currencyInput}
             setInputValue={setCurrencyInput}
@@ -887,7 +1010,7 @@ export const UnitConverterFixed = () => {
 
         <TabsContent value="data">
           <ConversionCard
-            title="Convertisseur de Données Numériques"
+            title="Convertisseur de Données Numériques - Binaire vs Décimal"
             icon={<TrendingUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />}
             inputValue={dataInput}
             setInputValue={setDataInput}

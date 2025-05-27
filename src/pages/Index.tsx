@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -11,8 +10,11 @@ import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtils } from "@/components/tools/TextUtils";
 import { DateCalculator } from "@/components/tools/DateCalculator";
+import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvanced";
+import { ProductivitySuite } from "@/components/tools/ProductivitySuite";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
+import { UnitConverterFixed } from "@/components/tools/UnitConverterFixed";
 import { About } from "@/components/About";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -27,9 +29,12 @@ const Index = () => {
   const getSectionTitle = () => {
     switch (activeSection) {
       case "unit-converter": return "Convertisseurs d'Unités";
+      case "unit-converter-fixed": return "Convertisseur Corrigé";
       case "calculator": return "Calculatrices";
       case "date-calculator": return "Calculateurs de Dates";
+      case "date-calculator-advanced": return "Dates & Temps Avancés";
       case "todo": return "Productivité";
+      case "productivity-suite": return "Suite Productivité";
       case "password-generator": return "Générateur de Mots de Passe";
       case "qr-code": return "Générateur QR Code";
       case "color-generator": return "Générateur de Couleurs";
@@ -44,12 +49,18 @@ const Index = () => {
     switch (activeSection) {
       case "unit-converter":
         return <UnitConverter />;
+      case "unit-converter-fixed":
+        return <UnitConverterFixed />;
       case "calculator":
         return <Calculator />;
       case "date-calculator":
         return <DateCalculator />;
+      case "date-calculator-advanced":
+        return <DateCalculatorAdvanced />;
       case "todo":
         return <TodoList />;
+      case "productivity-suite":
+        return <ProductivitySuite />;
       case "password-generator":
         return <PasswordGeneratorAdvanced />;
       case "qr-code":
@@ -100,6 +111,14 @@ const Index = () => {
                 tools={["Longueurs", "Poids", "Températures", "Volumes", "Surfaces", "Énergie", "Vitesse", "Pression"]}
                 onClick={() => setActiveSection("unit-converter")}
               />
+
+              <ToolSection
+                title="Convertisseur Corrigé"
+                description="Version sans bug de saisie avec débounce"
+                icon="✅"
+                tools={["Bug corrigé", "Débounce", "Temps réel", "Validation"]}
+                onClick={() => setActiveSection("unit-converter-fixed")}
+              />
               
               <ToolSection
                 title="Calculatrices"
@@ -110,10 +129,26 @@ const Index = () => {
               />
               
               <ToolSection
-                title="Productivité"
-                description="To-do, notes, minuteurs"
+                title="Dates & Temps"
+                description="Calculateurs avancés de dates"
+                icon="📅"
+                tools={["Différences", "Ajout/Soustraction", "Âge", "Planning"]}
+                onClick={() => setActiveSection("date-calculator-advanced")}
+              />
+              
+              <ToolSection
+                title="Productivité Pro"
+                description="Suite complète : tâches, notes, Pomodoro"
+                icon="🚀"
+                tools={["Tâches avancées", "Notes avec tags", "Pomodoro", "Statistiques"]}
+                onClick={() => setActiveSection("productivity-suite")}
+              />
+              
+              <ToolSection
+                title="Productivité Simple"
+                description="To-do list basique"
                 icon="📋"
-                tools={["To-Do List", "Notes", "Pomodoro", "Rappels"]}
+                tools={["To-Do List", "Simple", "Rapide"]}
                 onClick={() => setActiveSection("todo")}
               />
               

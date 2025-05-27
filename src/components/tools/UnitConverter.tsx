@@ -1,2 +1,2 @@
 
-export { UnitConverterImproved as UnitConverter } from './UnitConverterImproved';
+export { UnitConverterFixed as UnitConverter } from './UnitConverterFixed';

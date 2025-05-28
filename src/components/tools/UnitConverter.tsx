@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,7 +28,7 @@ interface ConversionState {
 }
 
 const UnitConverter = () => {
-  // États pour chaque type de conversion avec débounce
+  // États pour chaque type de conversion
   const [lengthState, setLengthState] = useState<ConversionState>({
     inputValue: "", fromUnit: "meter", toUnit: "kilometer"
   });
@@ -67,7 +66,7 @@ const UnitConverter = () => {
     inputValue: "", fromUnit: "byte", toUnit: "kilobyte"
   });
 
-  // Débounce des valeurs d'entrée
+  // Débounce des valeurs d'entrée - using only the inputValue string
   const debouncedLengthInput = useDebouncedInput(lengthState.inputValue, 300);
   const debouncedWeightInput = useDebouncedInput(weightState.inputValue, 300);
   const debouncedTempInput = useDebouncedInput(tempState.inputValue, 300);
@@ -81,65 +80,65 @@ const UnitConverter = () => {
   const debouncedCurrencyInput = useDebouncedInput(currencyState.inputValue, 300);
   const debouncedDataInput = useDebouncedInput(dataState.inputValue, 300);
 
-  // Fonctions de conversion avec débounce
+  // Fonctions de conversion avec débounce - using the debouncedValue property
   const convertLength = useCallback(() => 
-    convertWithFactors(debouncedLengthInput, lengthState.fromUnit, lengthState.toUnit, lengthUnits), 
-    [debouncedLengthInput, lengthState.fromUnit, lengthState.toUnit]
+    convertWithFactors(debouncedLengthInput.debouncedValue, lengthState.fromUnit, lengthState.toUnit, lengthUnits), 
+    [debouncedLengthInput.debouncedValue, lengthState.fromUnit, lengthState.toUnit]
   );
 
   const convertWeight = useCallback(() => 
-    convertWithFactors(debouncedWeightInput, weightState.fromUnit, weightState.toUnit, weightUnits), 
-    [debouncedWeightInput, weightState.fromUnit, weightState.toUnit]
+    convertWithFactors(debouncedWeightInput.debouncedValue, weightState.fromUnit, weightState.toUnit, weightUnits), 
+    [debouncedWeightInput.debouncedValue, weightState.fromUnit, weightState.toUnit]
   );
 
   const convertTemp = useCallback(() => 
-    convertTemperature(debouncedTempInput, tempState.fromUnit, tempState.toUnit), 
-    [debouncedTempInput, tempState.fromUnit, tempState.toUnit]
+    convertTemperature(debouncedTempInput.debouncedValue, tempState.fromUnit, tempState.toUnit), 
+    [debouncedTempInput.debouncedValue, tempState.fromUnit, tempState.toUnit]
   );
 
   const convertVolume = useCallback(() => 
-    convertWithFactors(debouncedVolumeInput, volumeState.fromUnit, volumeState.toUnit, volumeUnits), 
-    [debouncedVolumeInput, volumeState.fromUnit, volumeState.toUnit]
+    convertWithFactors(debouncedVolumeInput.debouncedValue, volumeState.fromUnit, volumeState.toUnit, volumeUnits), 
+    [debouncedVolumeInput.debouncedValue, volumeState.fromUnit, volumeState.toUnit]
   );
 
   const convertArea = useCallback(() => 
-    convertWithFactors(debouncedAreaInput, areaState.fromUnit, areaState.toUnit, areaUnits), 
-    [debouncedAreaInput, areaState.fromUnit, areaState.toUnit]
+    convertWithFactors(debouncedAreaInput.debouncedValue, areaState.fromUnit, areaState.toUnit, areaUnits), 
+    [debouncedAreaInput.debouncedValue, areaState.fromUnit, areaState.toUnit]
   );
 
   const convertEnergy = useCallback(() => 
-    convertWithFactors(debouncedEnergyInput, energyState.fromUnit, energyState.toUnit, energyUnits), 
-    [debouncedEnergyInput, energyState.fromUnit, energyState.toUnit]
+    convertWithFactors(debouncedEnergyInput.debouncedValue, energyState.fromUnit, energyState.toUnit, energyUnits), 
+    [debouncedEnergyInput.debouncedValue, energyState.fromUnit, energyState.toUnit]
   );
 
   const convertSpeed = useCallback(() => 
-    convertWithFactors(debouncedSpeedInput, speedState.fromUnit, speedState.toUnit, speedUnits), 
-    [debouncedSpeedInput, speedState.fromUnit, speedState.toUnit]
+    convertWithFactors(debouncedSpeedInput.debouncedValue, speedState.fromUnit, speedState.toUnit, speedUnits), 
+    [debouncedSpeedInput.debouncedValue, speedState.fromUnit, speedState.toUnit]
   );
 
   const convertPressure = useCallback(() => 
-    convertWithFactors(debouncedPressureInput, pressureState.fromUnit, pressureState.toUnit, pressureUnits), 
-    [debouncedPressureInput, pressureState.fromUnit, pressureState.toUnit]
+    convertWithFactors(debouncedPressureInput.debouncedValue, pressureState.fromUnit, pressureState.toUnit, pressureUnits), 
+    [debouncedPressureInput.debouncedValue, pressureState.fromUnit, pressureState.toUnit]
   );
 
   const convertPower = useCallback(() => 
-    convertWithFactors(debouncedPowerInput, powerState.fromUnit, powerState.toUnit, powerUnits), 
-    [debouncedPowerInput, powerState.fromUnit, powerState.toUnit]
+    convertWithFactors(debouncedPowerInput.debouncedValue, powerState.fromUnit, powerState.toUnit, powerUnits), 
+    [debouncedPowerInput.debouncedValue, powerState.fromUnit, powerState.toUnit]
   );
 
   const convertTime = useCallback(() => 
-    convertWithFactors(debouncedTimeInput, timeState.fromUnit, timeState.toUnit, timeUnits), 
-    [debouncedTimeInput, timeState.fromUnit, timeState.toUnit]
+    convertWithFactors(debouncedTimeInput.debouncedValue, timeState.fromUnit, timeState.toUnit, timeUnits), 
+    [debouncedTimeInput.debouncedValue, timeState.fromUnit, timeState.toUnit]
   );
 
   const convertCurrencyFn = useCallback(() => 
-    convertCurrency(debouncedCurrencyInput, currencyState.fromUnit, currencyState.toUnit, currencyUnits), 
-    [debouncedCurrencyInput, currencyState.fromUnit, currencyState.toUnit]
+    convertCurrency(debouncedCurrencyInput.debouncedValue, currencyState.fromUnit, currencyState.toUnit, currencyUnits), 
+    [debouncedCurrencyInput.debouncedValue, currencyState.fromUnit, currencyState.toUnit]
   );
 
   const convertData = useCallback(() => 
-    convertWithFactors(debouncedDataInput, dataState.fromUnit, dataState.toUnit, dataUnits), 
-    [debouncedDataInput, dataState.fromUnit, dataState.toUnit]
+    convertWithFactors(debouncedDataInput.debouncedValue, dataState.fromUnit, dataState.toUnit, dataUnits), 
+    [debouncedDataInput.debouncedValue, dataState.fromUnit, dataState.toUnit]
   );
 
   return (

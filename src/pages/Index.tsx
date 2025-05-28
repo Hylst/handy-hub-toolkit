@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ToolSection } from "@/components/ToolSection";
-import { UnitConverter } from "@/components/tools/UnitConverter";
+import UnitConverter from "@/components/tools/UnitConverter";
 import { Calculator } from "@/components/tools/Calculator";
 import { TodoList } from "@/components/tools/TodoList";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";

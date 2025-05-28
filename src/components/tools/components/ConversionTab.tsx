@@ -48,9 +48,11 @@ export const ConversionTab: React.FC<ConversionTabProps> = ({
       case "temperature":
         return convertTemperature(sanitized, from, to);
       case "currency":
-        return convertCurrency(sanitized, from, to, units);
+        // Type cast to UnitDefinition since currency units have factors
+        return convertCurrency(sanitized, from, to, units as Record<string, UnitDefinition>);
       default:
-        return convertWithFactors(sanitized, from, to, units);
+        // Type cast to UnitDefinition since non-temperature units have factors
+        return convertWithFactors(sanitized, from, to, units as Record<string, UnitDefinition>);
     }
   };
 

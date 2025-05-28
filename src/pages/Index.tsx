@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/AppSidebar";
 import { ToolSection } from "@/components/ToolSection";
 import UnitConverter from "@/components/tools/UnitConverter";
-import { Calculator } from "@/components/tools/Calculator";
+import { CalculatorImproved } from "@/components/tools/CalculatorImproved";
 import { TodoList } from "@/components/tools/TodoList";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
@@ -49,7 +49,7 @@ const Index = () => {
       case "unit-converter":
         return <UnitConverter />;
       case "calculator":
-        return <Calculator />;
+        return <CalculatorImproved />;
       case "date-calculator":
         return <DateCalculator />;
       case "date-calculator-advanced":

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -14,7 +15,6 @@ import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvance
 import { ProductivitySuite } from "@/components/tools/ProductivitySuite";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
-import { UnitConverterFixed } from "@/components/tools/UnitConverterFixed";
 import { About } from "@/components/About";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ const Index = () => {
   const getSectionTitle = () => {
     switch (activeSection) {
       case "unit-converter": return "Convertisseurs d'Unités";
-      case "unit-converter-fixed": return "Convertisseur Corrigé";
       case "calculator": return "Calculatrices";
       case "date-calculator": return "Calculateurs de Dates";
       case "date-calculator-advanced": return "Dates & Temps Avancés";
@@ -49,8 +48,6 @@ const Index = () => {
     switch (activeSection) {
       case "unit-converter":
         return <UnitConverter />;
-      case "unit-converter-fixed":
-        return <UnitConverterFixed />;
       case "calculator":
         return <Calculator />;
       case "date-calculator":
@@ -76,26 +73,27 @@ const Index = () => {
       default:
         return (
           <div className="space-y-8">
-            <div className="text-center py-12">
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
+            <div className="text-center py-8 md:py-12">
+              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
                 Boîte à Outils Pratiques
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6 px-4">
                 Une collection d'outils utiles pour votre quotidien. Convertisseurs, calculatrices, 
                 outils de productivité et bien plus encore !
               </p>
               
               {!loading && !user && (
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-4 px-4">
                   <Button 
                     onClick={() => navigate('/auth')}
-                    className="bg-gradient-to-r from-blue-600 to-teal-600"
+                    className="bg-gradient-to-r from-blue-600 to-teal-600 w-full sm:w-auto"
                   >
                     Se connecter
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={() => navigate('/auth')}
+                    className="w-full sm:w-auto"
                   >
                     Créer un compte
                   </Button>
@@ -103,21 +101,13 @@ const Index = () => {
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 px-4 md:px-0">
               <ToolSection
-                title="Convertisseurs"
-                description="8 types : longueurs, poids, températures..."
+                title="Convertisseurs Universels"
+                description="12 types d'unités : longueurs, poids, températures, devises..."
                 icon="⚖️"
-                tools={["Longueurs", "Poids", "Températures", "Volumes", "Surfaces", "Énergie", "Vitesse", "Pression"]}
+                tools={["12 Types d'unités", "Temps réel", "Notes explicatives", "Standards SI", "Débounce optimisé"]}
                 onClick={() => setActiveSection("unit-converter")}
-              />
-
-              <ToolSection
-                title="Convertisseur Corrigé"
-                description="Version sans bug de saisie avec débounce"
-                icon="✅"
-                tools={["Bug corrigé", "Débounce", "Temps réel", "Validation"]}
-                onClick={() => setActiveSection("unit-converter-fixed")}
               />
               
               <ToolSection
@@ -129,26 +119,26 @@ const Index = () => {
               />
               
               <ToolSection
-                title="Dates & Temps"
-                description="Calculateurs avancés de dates"
+                title="Dates & Temps Avancés"
+                description="Calculateurs complets de dates"
                 icon="📅"
-                tools={["Différences", "Ajout/Soustraction", "Âge", "Planning"]}
+                tools={["Différences", "Ajout/Soustraction", "Âge", "Planning", "Fuseaux horaires"]}
                 onClick={() => setActiveSection("date-calculator-advanced")}
               />
               
               <ToolSection
-                title="Productivité Pro"
-                description="Suite complète : tâches, notes, Pomodoro"
+                title="Suite Productivité"
+                description="Tâches, notes, Pomodoro intégrés"
                 icon="🚀"
-                tools={["Tâches avancées", "Notes avec tags", "Pomodoro", "Statistiques"]}
+                tools={["Tâches avancées", "Notes avec tags", "Pomodoro", "Statistiques", "Synchronisation"]}
                 onClick={() => setActiveSection("productivity-suite")}
               />
               
               <ToolSection
                 title="Productivité Simple"
-                description="To-do list basique"
+                description="To-do list rapide et efficace"
                 icon="📋"
-                tools={["To-Do List", "Simple", "Rapide"]}
+                tools={["To-Do List", "Simple", "Rapide", "Intuitive"]}
                 onClick={() => setActiveSection("todo")}
               />
               
@@ -156,7 +146,7 @@ const Index = () => {
                 title="Sécurité"
                 description="Générateur de mots de passe sécurisés"
                 icon="🔐"
-                tools={["Mots de passe", "Hash", "Chiffrement", "2FA"]}
+                tools={["Mots de passe", "Hash", "Chiffrement", "2FA", "Sécurité renforcée"]}
                 onClick={() => setActiveSection("password-generator")}
               />
               
@@ -164,7 +154,7 @@ const Index = () => {
                 title="QR Code"
                 description="Générateur de codes QR personnalisables"
                 icon="📱"
-                tools={["Texte", "URL", "WiFi", "Contact"]}
+                tools={["Texte", "URL", "WiFi", "Contact", "Personnalisable"]}
                 onClick={() => setActiveSection("qr-code")}
               />
               
@@ -172,7 +162,7 @@ const Index = () => {
                 title="Créativité"
                 description="Générateurs et outils créatifs"
                 icon="🎨"
-                tools={["Couleurs", "Texte", "Design", "Noms"]}
+                tools={["Couleurs", "Palettes", "Design", "Inspiration"]}
                 onClick={() => setActiveSection("color-generator")}
               />
               
@@ -228,13 +218,13 @@ const Index = () => {
               <div className="flex items-center gap-2 px-4">
                 <SidebarTrigger className="-ml-1" />
                 <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-                <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate">
                   {getSectionTitle()}
                 </h1>
               </div>
               
               <div className="ml-auto flex items-center gap-2 px-4">
-                <div className="hidden md:flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                <div className="hidden lg:flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                   <span>🛠️</span>
                   <span>Outils Pratiques</span>
                 </div>
@@ -248,6 +238,7 @@ const Index = () => {
                     variant="outline" 
                     onClick={() => navigate('/auth')}
                     className="hidden sm:flex"
+                    size="sm"
                   >
                     Connexion
                   </Button>

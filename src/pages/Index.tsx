@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -10,9 +9,8 @@ import { TodoList } from "@/components/tools/TodoList";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtils } from "@/components/tools/TextUtils";
-import { DateCalculator } from "@/components/tools/DateCalculator";
 import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvanced";
-import { ProductivitySuite } from "@/components/tools/ProductivitySuite";
+import { ProductivitySuiteModular } from "@/components/tools/ProductivitySuiteModular";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { About } from "@/components/About";
@@ -30,9 +28,8 @@ const Index = () => {
     switch (activeSection) {
       case "unit-converter": return "Convertisseurs d'Unités";
       case "calculator": return "Calculatrices";
-      case "date-calculator": return "Calculateurs de Dates";
       case "date-calculator-advanced": return "Dates & Temps Avancés";
-      case "todo": return "Productivité";
+      case "todo": return "Productivité Simple";
       case "productivity-suite": return "Suite Productivité";
       case "password-generator": return "Générateur de Mots de Passe";
       case "qr-code": return "Générateur QR Code";
@@ -50,14 +47,12 @@ const Index = () => {
         return <UnitConverter />;
       case "calculator":
         return <CalculatorImproved />;
-      case "date-calculator":
-        return <DateCalculator />;
       case "date-calculator-advanced":
         return <DateCalculatorAdvanced />;
       case "todo":
         return <TodoList />;
       case "productivity-suite":
-        return <ProductivitySuite />;
+        return <ProductivitySuiteModular />;
       case "password-generator":
         return <PasswordGeneratorAdvanced />;
       case "qr-code":

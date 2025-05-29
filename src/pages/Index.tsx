@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ToolSection } from "@/components/ToolSection";
+import { UserProfile } from "@/components/UserProfile";
 import UnitConverter from "@/components/tools/UnitConverter";
 import { CalculatorImproved } from "@/components/tools/CalculatorImproved";
 import { TodoList } from "@/components/tools/TodoList";
@@ -36,9 +38,14 @@ const Index = () => {
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
       case "text-utils": return "Utilitaires Texte";
+      case "profile": return "Mon Profil";
       case "about": return "À propos";
       default: return "Boîte à Outils Pratiques";
     }
+  };
+
+  const handleProfileClick = () => {
+    setActiveSection("profile");
   };
 
   const renderContent = () => {
@@ -63,6 +70,8 @@ const Index = () => {
         return <BMICalculator />;
       case "text-utils":
         return <TextUtils />;
+      case "profile":
+        return <UserProfile />;
       case "about":
         return <About />;
       default:
@@ -227,7 +236,7 @@ const Index = () => {
                 <ThemeToggle />
                 
                 {user ? (
-                  <UserMenu />
+                  <UserMenu onProfileClick={handleProfileClick} />
                 ) : (
                   <Button 
                     variant="outline" 

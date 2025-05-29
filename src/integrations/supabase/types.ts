@@ -12,27 +12,78 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           email: string | null
           full_name: string | null
           id: string
+          is_public: boolean | null
+          last_login: string | null
+          notes: string | null
+          preferences: Json | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          is_public?: boolean | null
+          last_login?: string | null
+          notes?: string | null
+          preferences?: Json | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          is_public?: boolean | null
+          last_login?: string | null
+          notes?: string | null
+          preferences?: Json | null
           updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_offline_data: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          last_sync: string | null
+          tool_name: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          last_sync?: string | null
+          tool_name: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          last_sync?: string | null
+          tool_name?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

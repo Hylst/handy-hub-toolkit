@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings, Info } from "lucide-react";
+import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings, Info, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppSidebarProps {
   activeSection: string;
@@ -19,6 +20,8 @@ interface AppSidebarProps {
 }
 
 export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps) => {
+  const { user } = useAuth();
+
   const menuItems = [
     { id: "home", label: "Accueil", icon: Home },
     { id: "unit-converter", label: "Convertisseurs", icon: Calculator },
@@ -31,6 +34,12 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
     { id: "text-utils", label: "Utilitaires Texte", icon: FileText },
     { id: "about", label: "À propos", icon: Info },
   ];
+
+  // Ajouter l'option profil pour les utilisateurs connectés
+  const userMenuItems = user ? [
+    { id: "profile", label: "Mon Profil", icon: User },
+    ...menuItems
+  ] : menuItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -51,7 +60,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {userMenuItems.map((item) => {
                 const IconComponent = item.icon;
                 return (
                   <SidebarMenuItem key={item.id}>

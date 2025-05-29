@@ -14,7 +14,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-export const UserMenu = () => {
+interface UserMenuProps {
+  onProfileClick?: () => void;
+}
+
+export const UserMenu = ({ onProfileClick }: UserMenuProps) => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -23,6 +27,12 @@ export const UserMenu = () => {
       title: "Déconnexion",
       description: "Vous avez été déconnecté avec succès.",
     });
+  };
+
+  const handleProfileClick = () => {
+    if (onProfileClick) {
+      onProfileClick();
+    }
   };
 
   if (!user) return null;
@@ -57,7 +67,7 @@ export const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleProfileClick}>
           <User className="mr-2 h-4 w-4" />
           <span>Profil</span>
         </DropdownMenuItem>

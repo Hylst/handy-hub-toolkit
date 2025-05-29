@@ -9,7 +9,7 @@ import { useDateCalculations } from "./dateCalculator/hooks/useDateCalculations"
 import { DateDifferenceTab } from "./dateCalculator/components/DateDifferenceTab";
 import { DateCalculationTab } from "./dateCalculator/components/DateCalculationTab";
 import { AgeCalculatorTab } from "./dateCalculator/components/AgeCalculatorTab";
-import { EventPlannerTab } from "./dateCalculator/components/EventPlannerTab";
+import { EventPlannerTabEnhanced } from "./dateCalculator/components/EventPlannerTabEnhanced";
 import { TimeZoneTab } from "./dateCalculator/components/TimeZoneTab";
 
 export const DateCalculatorAdvanced = () => {
@@ -60,7 +60,8 @@ export const DateCalculatorAdvanced = () => {
         </div>
         
         <p className="text-base lg:text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
-          Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore avec notre suite d'outils professionnels.
+          Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore 
+          avec notre suite d'outils professionnels. Données synchronisées hors ligne avec import/export.
         </p>
         
         <div className="flex justify-center gap-2 lg:gap-3 flex-wrap">
@@ -78,7 +79,7 @@ export const DateCalculatorAdvanced = () => {
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
             <History className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-            Historique
+            Sync hors ligne
           </Badge>
         </div>
       </div>
@@ -140,7 +141,7 @@ export const DateCalculatorAdvanced = () => {
         </TabsContent>
 
         <TabsContent value="planner">
-          <EventPlannerTab />
+          <EventPlannerTabEnhanced />
         </TabsContent>
 
         <TabsContent value="timezone">

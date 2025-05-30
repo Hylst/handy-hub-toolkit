@@ -7,32 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Settings, Wand2, Zap } from "lucide-react";
-
-interface PasswordSettingsAdvanced {
-  length: number;
-  includeUppercase: boolean;
-  includeLowercase: boolean;
-  includeNumbers: boolean;
-  includeSymbols: boolean;
-  excludeSimilar: boolean;
-  excludeAmbiguous: boolean;
-  requireEveryCharType: boolean;
-  template: string;
-  customCharset: string;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  settings: Partial<PasswordSettingsAdvanced>;
-  category: string;
-}
+import { PasswordSettings, PasswordTemplate } from "./hooks/usePasswordGeneratorAdvanced";
 
 interface PasswordSettingsAdvancedProps {
-  settings: PasswordSettingsAdvanced;
-  onSettingsChange: (settings: PasswordSettingsAdvanced) => void;
-  templates: Template[];
+  settings: PasswordSettings;
+  onSettingsChange: (settings: PasswordSettings) => void;
+  templates: PasswordTemplate[];
   onApplyTemplate: (templateId: string) => void;
 }
 
@@ -42,9 +22,9 @@ export const PasswordSettingsAdvanced = ({
   templates,
   onApplyTemplate
 }: PasswordSettingsAdvancedProps) => {
-  const updateSetting = <K extends keyof PasswordSettingsAdvanced>(
+  const updateSetting = <K extends keyof PasswordSettings>(
     key: K,
-    value: PasswordSettingsAdvanced[K]
+    value: PasswordSettings[K]
   ) => {
     onSettingsChange({ ...settings, [key]: value });
   };

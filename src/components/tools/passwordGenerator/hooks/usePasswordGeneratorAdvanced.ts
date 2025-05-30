@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useOfflineDataManager } from '@/hooks/useOfflineDataManager';
 
@@ -401,7 +402,7 @@ export const usePasswordGeneratorAdvanced = () => {
     }
     
     if (passwordSettings.includeSymbols) {
-      let symbolChars = passwordSettings.customChars || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+      let symbolChars = passwordSettings.customCharset || '!@#$%^&*()_+-=[]{}|;:,.<>?';
       if (passwordSettings.excludeAmbiguous) {
         symbolChars = symbolChars.replace(/[{}[\]()/\\'"`,;.<>]/g, '');
       }
@@ -460,7 +461,7 @@ export const usePasswordGeneratorAdvanced = () => {
     }
     
     if (settings.includeSymbols) {
-      let symbolChars = settings.customChars || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+      let symbolChars = settings.customCharset || '!@#$%^&*()_+-=[]{}|;:,.<>?';
       if (settings.excludeAmbiguous) {
         symbolChars = symbolChars.replace(/[{}[\]()/\\'"`,;.<>]/g, '');
       }

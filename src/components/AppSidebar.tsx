@@ -28,7 +28,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
     { id: "calculator", label: "Calculatrices", icon: Calculator },
     { id: "date-calculator-advanced", label: "Dates & Temps", icon: Calendar },
     { id: "productivity-suite", label: "Productivité", icon: CheckSquare },
-    { id: "password-generator", label: "Mots de passe", icon: Shield },
+    { id: "password-generator-advanced", label: "Mots de passe", icon: Shield },
     { id: "color-generator", label: "Créativité", icon: Palette },
     { id: "bmi-calculator", label: "Santé", icon: Heart },
     { id: "text-utils", label: "Utilitaires Texte", icon: FileText },

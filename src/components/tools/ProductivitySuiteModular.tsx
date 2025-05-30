@@ -2,11 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Timer, BookOpen, Target, TrendingUp, Zap, Brain } from "lucide-react";
+import { CheckSquare, Timer, BookOpen, Target, TrendingUp, Zap, Brain, CheckSquare2 } from "lucide-react";
 import { TaskManagerEnhanced } from "./productivity/components/TaskManagerEnhanced";
 import { PomodoroTimer } from "./productivity/components/PomodoroTimer";
 import { NoteManager } from "./productivity/components/NoteManager";
 import { GoalManagerEnhanced } from "./productivity/components/GoalManagerEnhanced";
+import { TodoListEnhanced } from "./TodoListEnhanced";
 
 export const ProductivitySuiteModular = () => {
   return (
@@ -21,23 +22,28 @@ export const ProductivitySuiteModular = () => {
           </div>
           <div className="text-center sm:text-left">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              Suite Productivité Avancée
+              Suite Productivité Complète
             </h1>
             <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mt-2">
-              Maximisez votre efficacité avec nos outils intégrés et synchronisés
+              Tous vos outils de productivité intégrés en un seul endroit
             </p>
           </div>
         </div>
         
-        <p className="text-sm lg:text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
-          Gérez vos tâches intelligemment, prenez des notes organisées, définissez des objectifs SMART et boostez votre concentration avec la technique Pomodoro. 
-          Données synchronisées hors ligne avec import/export.
+        <p className="text-sm lg:text-lg text-gray-700 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
+          Gérez vos tâches intelligemment avec la to-do list améliorée, prenez des notes organisées, 
+          définissez des objectifs SMART et boostez votre concentration avec la technique Pomodoro. 
+          Toutes vos données sont synchronisées et sauvegardées localement.
         </p>
         
         <div className="flex justify-center gap-2 lg:gap-3 flex-wrap">
           <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
+            <CheckSquare2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
+            To-do list avancée
+          </Badge>
+          <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
             <CheckSquare className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-            Gestion avancée
+            Gestion complète
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
             <Timer className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
@@ -53,21 +59,25 @@ export const ProductivitySuiteModular = () => {
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
             <TrendingUp className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-            Sync hors ligne
+            Statistiques
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm px-3 lg:px-4 py-2">
             <Zap className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-            Import/Export
+            Sauvegarde locale
           </Badge>
         </div>
       </div>
 
       {/* Navigation par onglets responsive */}
-      <Tabs defaultValue="tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-4 lg:mb-8 h-auto">
+      <Tabs defaultValue="todo" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-4 lg:mb-8 h-auto">
+          <TabsTrigger value="todo" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 lg:p-3">
+            <CheckSquare2 className="w-4 h-4 flex-shrink-0" />
+            <span className="text-xs sm:text-sm">To-Do List</span>
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 lg:p-3">
             <CheckSquare className="w-4 h-4 flex-shrink-0" />
-            <span className="text-xs sm:text-sm">Tâches</span>
+            <span className="text-xs sm:text-sm">Tâches Pro</span>
           </TabsTrigger>
           <TabsTrigger value="goals" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 lg:p-3">
             <Target className="w-4 h-4 flex-shrink-0" />
@@ -82,6 +92,10 @@ export const ProductivitySuiteModular = () => {
             <span className="text-xs sm:text-sm">Notes</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="todo">
+          <TodoListEnhanced />
+        </TabsContent>
 
         <TabsContent value="tasks">
           <TaskManagerEnhanced />

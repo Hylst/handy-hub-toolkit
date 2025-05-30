@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -7,7 +6,7 @@ import { ToolSection } from "@/components/ToolSection";
 import { UserProfile } from "@/components/UserProfile";
 import UnitConverter from "@/components/tools/UnitConverter";
 import { CalculatorImproved } from "@/components/tools/CalculatorImproved";
-import { TodoList } from "@/components/tools/TodoList";
+import { TodoListEnhanced } from "@/components/tools/TodoListEnhanced";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtils } from "@/components/tools/TextUtils";
@@ -31,10 +30,8 @@ const Index = () => {
       case "unit-converter": return "Convertisseurs d'Unités";
       case "calculator": return "Calculatrices";
       case "date-calculator-advanced": return "Dates & Temps Avancés";
-      case "todo": return "Productivité Simple";
       case "productivity-suite": return "Suite Productivité";
-      case "password-generator": return "Générateur de Mots de Passe";
-      case "qr-code": return "Générateur QR Code";
+      case "password-generator-advanced": return "Générateur de Mots de Passe";
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
       case "text-utils": return "Utilitaires Texte";
@@ -56,14 +53,10 @@ const Index = () => {
         return <CalculatorImproved />;
       case "date-calculator-advanced":
         return <DateCalculatorAdvanced />;
-      case "todo":
-        return <TodoList />;
       case "productivity-suite":
         return <ProductivitySuiteModular />;
-      case "password-generator":
+      case "password-generator-advanced":
         return <PasswordGeneratorAdvanced />;
-      case "qr-code":
-        return <QRCodeGenerator />;
       case "color-generator":
         return <ColorGenerator />;
       case "bmi-calculator":
@@ -131,35 +124,19 @@ const Index = () => {
               />
               
               <ToolSection
-                title="Suite Productivité"
-                description="Tâches, notes, Pomodoro intégrés"
+                title="Suite Productivité Complète"
+                description="Tâches avancées, notes, Pomodoro et to-do list intégrés"
                 icon="🚀"
-                tools={["Tâches avancées", "Notes avec tags", "Pomodoro", "Statistiques", "Synchronisation"]}
+                tools={["Tâches intelligentes", "To-do list améliorée", "Notes avec tags", "Pomodoro", "Statistiques", "Synchronisation"]}
                 onClick={() => setActiveSection("productivity-suite")}
               />
               
               <ToolSection
-                title="Productivité Simple"
-                description="To-do list rapide et efficace"
-                icon="📋"
-                tools={["To-Do List", "Simple", "Rapide", "Intuitive"]}
-                onClick={() => setActiveSection("todo")}
-              />
-              
-              <ToolSection
-                title="Sécurité"
-                description="Générateur de mots de passe sécurisés"
+                title="Sécurité Avancée"
+                description="Générateur de mots de passe sécurisés avec analyse"
                 icon="🔐"
-                tools={["Mots de passe", "Hash", "Chiffrement", "2FA", "Sécurité renforcée"]}
-                onClick={() => setActiveSection("password-generator")}
-              />
-              
-              <ToolSection
-                title="QR Code"
-                description="Générateur de codes QR personnalisables"
-                icon="📱"
-                tools={["Texte", "URL", "WiFi", "Contact", "Personnalisable"]}
-                onClick={() => setActiveSection("qr-code")}
+                tools={["Templates sécurisés", "Analyse de force", "Historique", "Export/Import", "Chiffrement"]}
+                onClick={() => setActiveSection("password-generator-advanced")}
               />
               
               <ToolSection

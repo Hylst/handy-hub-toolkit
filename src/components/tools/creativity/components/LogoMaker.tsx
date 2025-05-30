@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,7 +75,7 @@ export const LogoMaker = () => {
     { key: 'text-only', name: 'Texte seul', icon: 'T' }
   ];
 
-  const presetLogos = [
+  const presetLogos: Array<{ name: string; settings: LogoSettings }> = [
     {
       name: "Tech Startup",
       settings: {
@@ -86,7 +85,7 @@ export const LogoMaker = () => {
         fontWeight: "700",
         textColor: "#FFFFFF",
         backgroundColor: "#1F2937",
-        shape: 'rounded',
+        shape: 'rounded' as const,
         shapeColor: "#3B82F6",
         icon: "🚀",
         iconSize: 28,
@@ -106,7 +105,7 @@ export const LogoMaker = () => {
         fontWeight: "400",
         textColor: "#EC4899",
         backgroundColor: "#FFFBEB",
-        shape: 'circle',
+        shape: 'circle' as const,
         shapeColor: "#F59E0B",
         icon: "🎨",
         iconSize: 32,
@@ -126,7 +125,7 @@ export const LogoMaker = () => {
         fontWeight: "600",
         textColor: "#065F46",
         backgroundColor: "#ECFDF5",
-        shape: 'hexagon',
+        shape: 'hexagon' as const,
         shapeColor: "#10B981",
         icon: "🌱",
         iconSize: 30,
@@ -146,7 +145,7 @@ export const LogoMaker = () => {
         fontWeight: "300",
         textColor: "#374151",
         backgroundColor: "#FFFFFF",
-        shape: 'none',
+        shape: 'none' as const,
         shapeColor: "#000000",
         icon: "●",
         iconSize: 8,

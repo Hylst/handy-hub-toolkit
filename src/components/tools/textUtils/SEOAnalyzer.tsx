@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -331,7 +330,7 @@ export const SEOAnalyzer = ({ data, onDataChange }: SEOAnalyzerProps) => {
                   </span>
                 </div>
                 <div className="text-right">
-                  {factor.value !== undefined && (
+                  {'value' in factor && factor.value !== undefined && (
                     <div className="text-sm font-bold">
                       {typeof factor.value === 'number' ? 
                         (key === 'keywordDensity' ? `${factor.value}%` : factor.value) : 

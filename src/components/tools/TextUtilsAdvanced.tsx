@@ -17,23 +17,27 @@ import { FileText, BarChart3, Type, Shuffle, Copy, FileCode, Search, FileDown } 
 export const TextUtilsAdvanced = () => {
   const {
     data: textUtilsData,
-    saveData,
+    setData,
     exportData,
     importData,
     resetData,
     isOnline,
     isSyncing,
     lastSyncTime
-  } = useOfflineDataManager('text-utils-advanced');
+  } = useOfflineDataManager({
+    toolName: 'text-utils-advanced',
+    defaultData: {}
+  });
 
   const [activeTab, setActiveTab] = useState('analyzer');
 
   const handleDataChange = (newData: any) => {
-    saveData({
-      ...textUtilsData,
+    const updatedData = {
+      ...(textUtilsData || {}),
       [activeTab]: newData,
       lastModified: new Date().toISOString()
-    });
+    };
+    setData(updatedData);
   };
 
   const tabs = [

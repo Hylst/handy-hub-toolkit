@@ -42,7 +42,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
     { id: "password-generator-advanced", label: "Sécurité Avancée", icon: Shield },
     { id: "color-generator", label: "Créativité", icon: Palette },
     { id: "bmi-calculator", label: "Santé", icon: Heart },
-    { id: "text-utils", label: "Utilitaires Texte", icon: FileText },
+    { id: "text-utils-advanced", label: "Utilitaires Texte", icon: FileText },
     { id: "about", label: "À propos", icon: Info },
   ];
 

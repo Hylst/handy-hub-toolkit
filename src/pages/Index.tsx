@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -9,16 +10,19 @@ import { CalculatorImproved } from "@/components/tools/CalculatorImproved";
 import { TodoListEnhanced } from "@/components/tools/TodoListEnhanced";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
-import { TextUtils } from "@/components/tools/TextUtils";
+import { TextUtilsAdvanced } from "@/components/tools/TextUtilsAdvanced";
 import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvanced";
 import { ProductivitySuiteModular } from "@/components/tools/ProductivitySuiteModular";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { About } from "@/components/About";
+import { UniversalDataManager } from "@/components/tools/common/UniversalDataManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Database } from "lucide-react";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
@@ -34,7 +38,8 @@ const Index = () => {
       case "password-generator-advanced": return "Générateur de Mots de Passe";
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
-      case "text-utils": return "Utilitaires Texte";
+      case "text-utils": return "Utilitaires Texte Avancés";
+      case "data-manager": return "Gestionnaire de Données";
       case "profile": return "Mon Profil";
       case "about": return "À propos";
       default: return "Boîte à Outils Pratiques";
@@ -62,7 +67,9 @@ const Index = () => {
       case "bmi-calculator":
         return <BMICalculator />;
       case "text-utils":
-        return <TextUtils />;
+        return <TextUtilsAdvanced />;
+      case "data-manager":
+        return <UniversalDataManager />;
       case "profile":
         return <UserProfile />;
       case "about":
@@ -96,6 +103,31 @@ const Index = () => {
                   </Button>
                 </div>
               )}
+            </div>
+
+            {/* Gestionnaire de données universel */}
+            <div className="px-4 md:px-0">
+              <Card className="border-2 border-blue-200 dark:border-blue-800 mb-8">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Database className="w-5 h-5 text-blue-600" />
+                    Gestion des Données
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Gérez, exportez et importez toutes vos données en un seul endroit.
+                  </p>
+                  <Button 
+                    onClick={() => setActiveSection("data-manager")}
+                    className="w-full sm:w-auto"
+                    variant="outline"
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    Accéder au Gestionnaire
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 px-4 md:px-0">
@@ -156,10 +188,10 @@ const Index = () => {
               />
               
               <ToolSection
-                title="Utilitaires Texte"
-                description="Compteurs, formatage, analyse"
+                title="Utilitaires Texte Avancés"
+                description="Analyse, formatage, transformation et outils avancés"
                 icon="📝"
-                tools={["Compteur", "Formatage", "Analyse", "Nettoyage"]}
+                tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown"]}
                 onClick={() => setActiveSection("text-utils")}
               />
               

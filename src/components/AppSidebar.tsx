@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings, Info, User } from "lucide-react";
+import { Calendar, Home, Calculator, CheckSquare, Palette, Heart, FileText, Shield, Settings, Info, User, Database } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,9 +22,19 @@ interface AppSidebarProps {
 
 export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps) => {
   const { user } = useAuth();
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  const handleMenuClick = (sectionId: string) => {
+    setActiveSection(sectionId);
+    // Fermer le menu sur mobile après sélection
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const menuItems = [
     { id: "home", label: "Accueil", icon: Home },
+    { id: "data-manager", label: "Gestion Données", icon: Database },
     { id: "unit-converter", label: "Convertisseurs", icon: Calculator },
     { id: "calculator", label: "Calculatrices", icon: Calculator },
     { id: "date-calculator-advanced", label: "Dates & Temps", icon: Calendar },
@@ -65,7 +76,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton 
-                      onClick={() => setActiveSection(item.id)}
+                      onClick={() => handleMenuClick(item.id)}
                       isActive={activeSection === item.id}
                       tooltip={item.label}
                     >

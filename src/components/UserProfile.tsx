@@ -9,8 +9,9 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { User, Calendar, Mail, Edit2, Save, X } from 'lucide-react';
+import { User, Calendar, Mail, Edit2, Save, X, Database } from 'lucide-react';
 import { format } from 'date-fns';
+import { UniversalDataManager } from './tools/common/UniversalDataManager';
 
 interface UserProfile {
   id: string;
@@ -34,6 +35,7 @@ export const UserProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDataManager, setShowDataManager] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -157,6 +159,21 @@ export const UserProfile = () => {
     );
   }
 
+  if (showDataManager) {
+    return (
+      <div className="space-y-6">
+        <Button 
+          variant="outline" 
+          onClick={() => setShowDataManager(false)}
+          className="mb-4"
+        >
+          ← Retour au profil
+        </Button>
+        <UniversalDataManager />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Card>
@@ -166,6 +183,14 @@ export const UserProfile = () => {
             Mon Profil
           </CardTitle>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDataManager(true)}
+            >
+              <Database className="w-4 h-4 mr-2" />
+              Gérer mes données
+            </Button>
             {isEditing ? (
               <>
                 <Button

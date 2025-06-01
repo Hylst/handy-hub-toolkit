@@ -148,6 +148,13 @@ export const UniversalDataManager = () => {
     ? Math.round((stats.storageUsed / Math.max(stats.storageQuota, 1)) * 100)
     : 0;
 
+  // Determine progress bar color based on usage
+  const getProgressBarClass = (percentage: number) => {
+    if (percentage > 80) return 'bg-red-500';
+    if (percentage > 60) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
   if (!isInitialized) {
     return (
       <Card className="border-2">
@@ -206,18 +213,12 @@ export const UniversalDataManager = () => {
                 <span className="text-sm font-medium">Utilisation du stockage</span>
                 <span className="text-sm text-gray-500">{storagePercentage}%</span>
               </div>
-              <Progress 
-                value={storagePercentage} 
-                className="w-full"
-                // @ts-ignore
-                style={{
-                  '--progress-background': storagePercentage > 80 
-                    ? 'rgb(239 68 68)' 
-                    : storagePercentage > 60 
-                      ? 'rgb(245 158 11)' 
-                      : 'rgb(34 197 94)'
-                }}
-              />
+              <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-300 ${getProgressBarClass(storagePercentage)}`}
+                  style={{ width: `${storagePercentage}%` }}
+                />
+              </div>
               {storagePercentage > 80 && (
                 <div className="flex items-center gap-1 text-xs text-red-600">
                   <AlertTriangle className="w-3 h-3" />

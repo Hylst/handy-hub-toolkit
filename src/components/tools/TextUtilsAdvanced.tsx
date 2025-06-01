@@ -24,7 +24,7 @@ export const TextUtilsAdvanced = () => {
     isOnline,
     isSyncing,
     lastSyncTime
-  } = useOfflineDataManager({
+  } = useOfflineDataManager<Record<string, any>>({
     toolName: 'text-utils-advanced',
     defaultData: {}
   });
@@ -32,8 +32,9 @@ export const TextUtilsAdvanced = () => {
   const [activeTab, setActiveTab] = useState('analyzer');
 
   const handleDataChange = (newData: any) => {
+    const currentData = textUtilsData && typeof textUtilsData === 'object' ? textUtilsData : {};
     const updatedData = {
-      ...(textUtilsData || {}),
+      ...currentData,
       [activeTab]: newData,
       lastModified: new Date().toISOString()
     };

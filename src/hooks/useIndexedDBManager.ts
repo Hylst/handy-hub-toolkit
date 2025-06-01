@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 
@@ -271,7 +270,6 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       return {
         quota: estimate.quota,
         usage: estimate.usage,
-        usageDetails: estimate.usageDetails,
         available: estimate.quota ? estimate.quota - (estimate.usage || 0) : 0
       };
     } catch (error) {

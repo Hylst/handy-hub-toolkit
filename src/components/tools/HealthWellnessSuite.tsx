@@ -18,6 +18,8 @@ import { DataImportExport } from './common/DataImportExport';
 import { useOfflineDataManager } from '@/hooks/useOfflineDataManager';
 
 export const HealthWellnessSuite = () => {
+  console.log('HealthWellnessSuite component loading...');
+  
   const {
     data: healthData,
     setData,
@@ -35,6 +37,7 @@ export const HealthWellnessSuite = () => {
   const [activeTab, setActiveTab] = useState('bmi');
 
   const handleDataChange = (toolName: string, newData: any) => {
+    console.log(`Data change for ${toolName}:`, newData);
     const currentData = healthData && typeof healthData === 'object' ? healthData : {};
     const updatedData = {
       ...currentData,
@@ -118,6 +121,8 @@ export const HealthWellnessSuite = () => {
   ];
 
   const categories = [...new Set(tabs.map(tab => tab.category))];
+
+  console.log('HealthWellnessSuite rendering with tabs:', tabs.length);
 
   return (
     <div className="space-y-4 lg:space-y-6">

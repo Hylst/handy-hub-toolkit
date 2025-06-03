@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -128,8 +127,8 @@ export const EmojiManager = ({ data, onDataChange }: EmojiManagerProps) => {
   };
 
   const removeAllEmojis = () => {
-    // Fixed regex pattern - using standard Unicode ranges without \u{} syntax
-    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
+    // Using character class ranges for better TypeScript compatibility
+    const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27BF]/g;
     const textWithoutEmojis = text.replace(emojiRegex, '');
     setText(textWithoutEmojis);
     toast({

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -15,6 +14,7 @@ import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvance
 import { ProductivitySuiteModular } from "@/components/tools/ProductivitySuiteModular";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
+import { HealthWellnessSuite } from "@/components/tools/HealthWellnessSuite";
 import { About } from "@/components/About";
 import { UniversalDataManager } from "@/components/tools/common/UniversalDataManager";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,7 +38,8 @@ const Index = () => {
       case "password-generator-advanced": return "Générateur de Mots de Passe";
       case "color-generator": return "Générateur de Couleurs";
       case "bmi-calculator": return "Calculateur IMC";
-      case "text-utils": return "Utilitaires Texte Avancés";
+      case "health-wellness-suite": return "Suite Santé & Bien-être";
+      case "text-utils-advanced": return "Utilitaires Texte Avancés";
       case "data-manager": return "Gestionnaire de Données";
       case "profile": return "Mon Profil";
       case "about": return "À propos";
@@ -66,7 +67,9 @@ const Index = () => {
         return <ColorGenerator />;
       case "bmi-calculator":
         return <BMICalculator />;
-      case "text-utils":
+      case "health-wellness-suite":
+        return <HealthWellnessSuite />;
+      case "text-utils-advanced":
         return <TextUtilsAdvanced />;
       case "data-manager":
         return <UniversalDataManager />;
@@ -181,18 +184,18 @@ const Index = () => {
               
               <ToolSection
                 title="Santé & Bien-être"
-                description="IMC, calories, hydratation"
+                description="Suite complète : IMC, nutrition, sommeil, exercices..."
                 icon="💪"
-                tools={["IMC", "Calories", "Hydratation", "Sommeil"]}
-                onClick={() => setActiveSection("bmi-calculator")}
+                tools={["IMC Avancé", "Nutrition", "Hydratation", "Sommeil", "Exercices", "Mental", "Médicaments", "Métriques", "Poids", "Objectifs"]}
+                onClick={() => setActiveSection("health-wellness-suite")}
               />
               
               <ToolSection
                 title="Utilitaires Texte Avancés"
                 description="Analyse, formatage, transformation et outils avancés"
                 icon="📝"
-                tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown"]}
-                onClick={() => setActiveSection("text-utils")}
+                tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown", "Colorisation", "Emojis"]}
+                onClick={() => setActiveSection("text-utils-advanced")}
               />
               
               <ToolSection

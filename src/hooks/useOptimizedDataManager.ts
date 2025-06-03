@@ -18,8 +18,14 @@ export const useOptimizedDataManager = <T>({
   syncInterval = 30000 // 30 secondes
 }: OptimizedDataManagerOptions) => {
   const { toast } = useToast();
-  const { saveData, loadData, deleteData } = useDexieDB();
-  const { isOnline, isSyncing, lastSyncTime, saveToSupabase, loadFromSupabase } = useDataSync(toolName);
+  const { saveData: saveToDexie, loadData: loadFromDexie, deleteData } = useDexieDB();
+  const { 
+    isOnline, 
+    isSyncing, 
+    lastSyncTime, 
+    saveData: saveToSync, 
+    loadData: loadFromSync 
+  } = useDataSync(toolName);
   
   const [data, setData] = useState<T>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,20 +39,16 @@ export const useOptimizedDataManager = <T>({
     const loadInitialData = async () => {
       setIsLoading(true);
       try {
-        // Essayer de charger depuis Supabase si en ligne
-        if (isOnline) {
-          const remoteData = await loadFromSupabase();
-          if (remoteData) {
-            setData(remoteData);
-            // Sauvegarder localement pour l'accès hors ligne
-            await saveData(toolName, remoteData);
-            console.log(`📥 Données chargées depuis Supabase pour ${toolName}`);
-            return;
-          }
+        // Essayer de charger depuis la synchronisation (Supabase si en ligne, sinon local)
+        const syncData = await loadFromSync();
+        if (syncData) {
+          setData(syncData);
+          console.log(`📥 Données chargées depuis la sync pour ${toolName}`);
+          return;
         }
 
-        // Charger depuis Dexie
-        const localData = await loadData(toolName);
+        // Charger depuis Dexie comme fallback
+        const localData = await loadFromDexie(toolName);
         if (localData) {
           setData(localData);
           console.log(`💾 Données chargées depuis Dexie pour ${toolName}`);
@@ -63,7 +65,7 @@ export const useOptimizedDataManager = <T>({
     };
 
     loadInitialData();
-  }, [toolName, isOnline, defaultData, saveData, loadData, loadFromSupabase]);
+  }, [toolName, isOnline, defaultData, loadFromDexie, loadFromSync]);
 
   // Auto-save debounced
   const debouncedSave = useCallback(async (newData: T) => {
@@ -73,13 +75,11 @@ export const useOptimizedDataManager = <T>({
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        // Sauvegarder localement
-        await saveData(toolName, newData);
+        // Sauvegarder localement avec Dexie
+        await saveToDexie(toolName, newData);
         
-        // Sauvegarder sur Supabase si en ligne
-        if (isOnline && !isSyncing) {
-          await saveToSupabase(newData);
-        }
+        // Sauvegarder avec la synchronisation (gère automatiquement Supabase/local)
+        await saveToSync(newData);
         
         setHasChanges(false);
         console.log(`🔄 Auto-save terminé pour ${toolName}`);
@@ -87,7 +87,7 @@ export const useOptimizedDataManager = <T>({
         console.error(`❌ Erreur auto-save pour ${toolName}:`, error);
       }
     }, 1000); // 1 seconde de debounce
-  }, [toolName, saveData, saveToSupabase, isOnline, isSyncing]);
+  }, [toolName, saveToDexie, saveToSync]);
 
   // Mise à jour des données avec auto-save
   const updateData = useCallback((newData: T) => {
@@ -102,11 +102,8 @@ export const useOptimizedDataManager = <T>({
   // Sauvegarde manuelle
   const manualSave = useCallback(async () => {
     try {
-      await saveData(toolName, data);
-      
-      if (isOnline) {
-        await saveToSupabase(data);
-      }
+      await saveToDexie(toolName, data);
+      await saveToSync(data);
       
       setHasChanges(false);
       toast({
@@ -121,7 +118,7 @@ export const useOptimizedDataManager = <T>({
         variant: "destructive",
       });
     }
-  }, [data, toolName, saveData, saveToSupabase, isOnline, toast]);
+  }, [data, toolName, saveToDexie, saveToSync, toast]);
 
   // Export optimisé
   const exportData = useCallback(() => {
@@ -208,11 +205,9 @@ export const useOptimizedDataManager = <T>({
 
   // Sync automatique
   useEffect(() => {
-    if (syncInterval > 0 && isOnline) {
+    if (syncInterval > 0 && isOnline && hasChanges && !isSyncing) {
       syncIntervalRef.current = setInterval(() => {
-        if (hasChanges && !isSyncing) {
-          saveToSupabase(data);
-        }
+        saveToSync(data);
       }, syncInterval);
 
       return () => {
@@ -221,7 +216,7 @@ export const useOptimizedDataManager = <T>({
         }
       };
     }
-  }, [syncInterval, isOnline, hasChanges, isSyncing, data, saveToSupabase]);
+  }, [syncInterval, isOnline, hasChanges, isSyncing, data, saveToSync]);
 
   // Cleanup
   useEffect(() => {

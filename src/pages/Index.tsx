@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { ToolSection } from "@/components/ToolSection";
 import { UserProfile } from "@/components/UserProfile";
 import UnitConverter from "@/components/tools/UnitConverter";
 import { CalculatorImproved } from "@/components/tools/CalculatorImproved";
@@ -21,8 +21,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Database } from "lucide-react";
+
+// New design system components
+import { Container } from "@/components/ui/container";
+import { Section } from "@/components/ui/section";
+import { Grid } from "@/components/ui/grid";
+import { Heading } from "@/components/ui/heading";
+import { Text } from "@/components/ui/text";
+import { ToolCard } from "@/components/ui/tool-card";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
@@ -79,133 +87,156 @@ const Index = () => {
         return <About />;
       default:
         return (
-          <div className="space-y-8">
-            <div className="text-center py-8 md:py-12">
-              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
-                Boîte à Outils Pratiques
-              </h1>
-              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6 px-4">
-                Une collection d'outils utiles pour votre quotidien. Convertisseurs, calculatrices, 
-                outils de productivité et bien plus encore !
-              </p>
-              
-              {!loading && !user && (
-                <div className="flex flex-col sm:flex-row justify-center gap-4 px-4">
-                  <Button 
-                    onClick={() => navigate('/auth')}
-                    className="bg-gradient-to-r from-blue-600 to-teal-600 w-full sm:w-auto"
-                  >
-                    Se connecter
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/auth')}
-                    className="w-full sm:w-auto"
-                  >
-                    Créer un compte
-                  </Button>
-                </div>
-              )}
-            </div>
+          <div className="space-y-0">
+            {/* Hero Section */}
+            <Section spacing="xl" className="text-center">
+              <Container variant="narrow">
+                <Heading level={1} gradient className="mb-6">
+                  Boîte à Outils Pratiques
+                </Heading>
+                <Text size="xl" color="muted" className="mb-8 max-w-2xl mx-auto">
+                  Une collection d'outils utiles pour votre quotidien. Convertisseurs, calculatrices, 
+                  outils de productivité et bien plus encore !
+                </Text>
+                
+                {!loading && !user && (
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    <Button 
+                      onClick={() => navigate('/auth')}
+                      className="bg-gradient-to-r from-blue-600 to-teal-600 w-full sm:w-auto"
+                      size="lg"
+                    >
+                      Se connecter
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/auth')}
+                      className="w-full sm:w-auto"
+                      size="lg"
+                    >
+                      Créer un compte
+                    </Button>
+                  </div>
+                )}
+              </Container>
+            </Section>
 
-            {/* Gestionnaire de données universel */}
-            <div className="px-4 md:px-0">
-              <Card className="border-2 border-blue-200 dark:border-blue-800 mb-8">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Database className="w-5 h-5 text-blue-600" />
-                    Gestion des Données
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Gérez, exportez et importez toutes vos données en un seul endroit.
-                  </p>
-                  <Button 
-                    onClick={() => setActiveSection("data-manager")}
-                    className="w-full sm:w-auto"
-                    variant="outline"
-                  >
-                    <Database className="w-4 h-4 mr-2" />
-                    Accéder au Gestionnaire
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Data Manager Highlight */}
+            <Section spacing="md" background="muted">
+              <Container>
+                <Card className="border-2 border-blue-200 dark:border-blue-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl bg-blue-100 dark:bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center">
+                        <Database className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <Heading level={2} size="xl" className="mb-2">
+                          Gestion des Données
+                        </Heading>
+                        <Text color="muted">
+                          Gérez, exportez et importez toutes vos données en un seul endroit.
+                        </Text>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      onClick={() => setActiveSection("data-manager")}
+                      className="w-full sm:w-auto"
+                      variant="outline"
+                    >
+                      <Database className="w-4 h-4 mr-2" />
+                      Accéder au Gestionnaire
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Container>
+            </Section>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 px-4 md:px-0">
-              <ToolSection
-                title="Convertisseurs Universels"
-                description="12 types d'unités : longueurs, poids, températures, devises..."
-                icon="⚖️"
-                tools={["12 Types d'unités", "Temps réel", "Notes explicatives", "Standards SI", "Débounce optimisé"]}
-                onClick={() => setActiveSection("unit-converter")}
-              />
-              
-              <ToolSection
-                title="Calculatrices"
-                description="Scientifique avec saisie clavier"
-                icon="🧮"
-                tools={["Scientifique", "Clavier", "Mémoire", "Historique"]}
-                onClick={() => setActiveSection("calculator")}
-              />
-              
-              <ToolSection
-                title="Dates & Temps Avancés"
-                description="Calculateurs complets de dates"
-                icon="📅"
-                tools={["Différences", "Ajout/Soustraction", "Âge", "Planning", "Fuseaux horaires"]}
-                onClick={() => setActiveSection("date-calculator-advanced")}
-              />
-              
-              <ToolSection
-                title="Suite Productivité Complète"
-                description="Tâches avancées, notes, Pomodoro et to-do list intégrés"
-                icon="🚀"
-                tools={["Tâches intelligentes", "To-do list améliorée", "Notes avec tags", "Pomodoro", "Statistiques", "Synchronisation"]}
-                onClick={() => setActiveSection("productivity-suite")}
-              />
-              
-              <ToolSection
-                title="Sécurité Avancée"
-                description="Générateur de mots de passe sécurisés avec analyse"
-                icon="🔐"
-                tools={["Templates sécurisés", "Analyse de force", "Historique", "Export/Import", "Chiffrement"]}
-                onClick={() => setActiveSection("password-generator-advanced")}
-              />
-              
-              <ToolSection
-                title="Créativité"
-                description="Générateurs et outils créatifs"
-                icon="🎨"
-                tools={["Couleurs", "Palettes", "Design", "Inspiration"]}
-                onClick={() => setActiveSection("color-generator")}
-              />
-              
-              <ToolSection
-                title="Santé & Bien-être"
-                description="Suite complète : IMC, nutrition, sommeil, exercices..."
-                icon="💪"
-                tools={["IMC Avancé", "Nutrition", "Hydratation", "Sommeil", "Exercices", "Mental", "Médicaments", "Métriques", "Poids", "Objectifs"]}
-                onClick={() => setActiveSection("health-wellness-suite")}
-              />
-              
-              <ToolSection
-                title="Utilitaires Texte Avancés"
-                description="Analyse, formatage, transformation et outils avancés"
-                icon="📝"
-                tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown", "Colorisation", "Emojis"]}
-                onClick={() => setActiveSection("text-utils-advanced")}
-              />
-              
-              <ToolSection
-                title="À propos"
-                description="Informations sur l'application"
-                icon="ℹ️"
-                tools={["Auteur", "Technologies", "Version", "Licence"]}
-                onClick={() => setActiveSection("about")}
-              />
-            </div>
+            {/* Tools Grid */}
+            <Section spacing="lg">
+              <Container>
+                <Heading level={2} size="2xl" className="text-center mb-8">
+                  Outils Disponibles
+                </Heading>
+                
+                <Grid variant="responsive" gap="lg">
+                  <ToolCard
+                    title="Convertisseurs Universels"
+                    description="12 types d'unités : longueurs, poids, températures, devises..."
+                    icon="⚖️"
+                    tools={["12 Types d'unités", "Temps réel", "Notes explicatives", "Standards SI", "Débounce optimisé"]}
+                    onClick={() => setActiveSection("unit-converter")}
+                  />
+                  
+                  <ToolCard
+                    title="Calculatrices"
+                    description="Scientifique avec saisie clavier"
+                    icon="🧮"
+                    tools={["Scientifique", "Clavier", "Mémoire", "Historique"]}
+                    onClick={() => setActiveSection("calculator")}
+                  />
+                  
+                  <ToolCard
+                    title="Dates & Temps Avancés"
+                    description="Calculateurs complets de dates"
+                    icon="📅"
+                    tools={["Différences", "Ajout/Soustraction", "Âge", "Planning", "Fuseaux horaires"]}
+                    onClick={() => setActiveSection("date-calculator-advanced")}
+                  />
+                  
+                  <ToolCard
+                    title="Suite Productivité Complète"
+                    description="Tâches avancées, notes, Pomodoro et to-do list intégrés"
+                    icon="🚀"
+                    tools={["Tâches intelligentes", "To-do list améliorée", "Notes avec tags", "Pomodoro", "Statistiques", "Synchronisation"]}
+                    onClick={() => setActiveSection("productivity-suite")}
+                    variant="highlighted"
+                  />
+                  
+                  <ToolCard
+                    title="Sécurité Avancée"
+                    description="Générateur de mots de passe sécurisés avec analyse"
+                    icon="🔐"
+                    tools={["Templates sécurisés", "Analyse de force", "Historique", "Export/Import", "Chiffrement"]}
+                    onClick={() => setActiveSection("password-generator-advanced")}
+                  />
+                  
+                  <ToolCard
+                    title="Créativité"
+                    description="Générateurs et outils créatifs"
+                    icon="🎨"
+                    tools={["Couleurs", "Palettes", "Design", "Inspiration"]}
+                    onClick={() => setActiveSection("color-generator")}
+                  />
+                  
+                  <ToolCard
+                    title="Santé & Bien-être"
+                    description="Suite complète : IMC, nutrition, sommeil, exercices..."
+                    icon="💪"
+                    tools={["IMC Avancé", "Nutrition", "Hydratation", "Sommeil", "Exercices", "Mental", "Médicaments", "Métriques", "Poids", "Objectifs"]}
+                    onClick={() => setActiveSection("health-wellness-suite")}
+                  />
+                  
+                  <ToolCard
+                    title="Utilitaires Texte Avancés"
+                    description="Analyse, formatage, transformation et outils avancés"
+                    icon="📝"
+                    tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown", "Colorisation", "Emojis"]}
+                    onClick={() => setActiveSection("text-utils-advanced")}
+                  />
+                  
+                  <ToolCard
+                    title="À propos"
+                    description="Informations sur l'application"
+                    icon="ℹ️"
+                    tools={["Auteur", "Technologies", "Version", "Licence"]}
+                    onClick={() => setActiveSection("about")}
+                  />
+                </Grid>
+              </Container>
+            </Section>
           </div>
         );
     }
@@ -216,7 +247,7 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Chargement...</p>
+          <Text color="muted">Chargement...</Text>
         </div>
       </div>
     );
@@ -234,9 +265,9 @@ const Index = () => {
               <div className="flex items-center gap-2 px-4">
                 <SidebarTrigger className="-ml-1" />
                 <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-                <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate">
+                <Heading level={1} size="lg" className="truncate">
                   {getSectionTitle()}
-                </h1>
+                </Heading>
               </div>
               
               <div className="ml-auto flex items-center gap-2 px-4">
@@ -263,10 +294,10 @@ const Index = () => {
             </header>
             
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
-              <div className="max-w-7xl mx-auto">
+            <main className="flex-1">
+              <Container className="py-6 lg:py-8">
                 {renderContent()}
-              </div>
+              </Container>
             </main>
           </SidebarInset>
         </div>

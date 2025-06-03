@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -220,7 +221,7 @@ export const EmojiManager = ({ data, onDataChange }: EmojiManagerProps) => {
               className="text-lg"
             />
             <div className="mt-2 text-xs text-gray-500">
-              Codes supportés: :) :( :D :P ;) <3 ou :nom_emoji:
+              Codes supportés: :) :( :D :P ;) &lt;3 ou :nom_emoji:
             </div>
           </CardContent>
         </Card>
@@ -234,7 +235,7 @@ export const EmojiManager = ({ data, onDataChange }: EmojiManagerProps) => {
           </CardHeader>
           <CardContent>
             <div className="h-48 overflow-auto p-3 bg-gray-50 dark:bg-gray-900 rounded border text-lg whitespace-pre-wrap">
-              {processedText || text || 'L\'aperçu apparaîtra ici...'}
+              {processedText || text || "L'aperçu apparaîtra ici..."}
             </div>
           </CardContent>
         </Card>

@@ -1,297 +1,188 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useIndexedDBManager } from './useIndexedDBManager';
+import { useCallback } from 'react';
+import { useDexieDB } from './useDexieDB';
 import { useToast } from './use-toast';
 
-interface DataManagerConfig {
-  toolName: string;
-  defaultData?: any;
-  autoSave?: boolean;
-  autoSaveInterval?: number;
+interface UniversalExportOptions {
+  includeHistory?: boolean;
+  includePreferences?: boolean;
+  selectedTools?: string[];
+  compressed?: boolean;
 }
 
-const DATABASE_CONFIG = {
-  dbName: 'LovableToolsDB',
-  version: 1,
-  stores: [
-    {
-      name: 'productivity',
-      keyPath: 'id',
-      indexes: [
-        { name: 'toolName', keyPath: 'toolName' },
-        { name: 'timestamp', keyPath: 'timestamp' }
-      ]
-    },
-    {
-      name: 'creativity',
-      keyPath: 'id',
-      indexes: [
-        { name: 'toolName', keyPath: 'toolName' },
-        { name: 'timestamp', keyPath: 'timestamp' }
-      ]
-    },
-    {
-      name: 'utilities',
-      keyPath: 'id',
-      indexes: [
-        { name: 'toolName', keyPath: 'toolName' },
-        { name: 'timestamp', keyPath: 'timestamp' }
-      ]
-    },
-    {
-      name: 'settings',
-      keyPath: 'id',
-      indexes: [
-        { name: 'category', keyPath: 'category' }
-      ]
-    }
-  ]
-};
+interface UniversalData {
+  version: string;
+  exportDate: string;
+  application: string;
+  tools: Record<string, any>;
+  metadata: {
+    totalSize: number;
+    toolCount: number;
+    exportOptions: UniversalExportOptions;
+  };
+}
 
-export const useUniversalDataManager = <T>({
-  toolName,
-  defaultData = null,
-  autoSave = true,
-  autoSaveInterval = 5000
-}: DataManagerConfig) => {
+export const useUniversalDataManager = () => {
   const { toast } = useToast();
-  const {
-    isInitialized,
-    isLoading,
-    saveData: saveToIndexedDB,
-    loadData: loadFromIndexedDB,
-    deleteData,
-    exportAllData,
-    clearAllData,
-    getStorageInfo
-  } = useIndexedDBManager(DATABASE_CONFIG);
+  const { getAllData, clearAllData, getStorageStats } = useDexieDB();
 
-  const [data, setData] = useState<T>(defaultData);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
-
-  // Determine store name based on tool category
-  const getStoreName = useCallback((toolName: string): string => {
-    if (toolName.includes('productivity') || toolName.includes('task') || toolName.includes('goal') || toolName.includes('note')) {
-      return 'productivity';
-    }
-    if (toolName.includes('creativity') || toolName.includes('logo') || toolName.includes('color') || toolName.includes('design')) {
-      return 'creativity';
-    }
-    return 'utilities';
-  }, []);
-
-  // Load initial data
-  useEffect(() => {
-    const loadInitialData = async () => {
-      if (!isInitialized) return;
-
-      try {
-        const storeName = getStoreName(toolName);
-        const loadedData = await loadFromIndexedDB(storeName, toolName);
-        
-        if (loadedData) {
-          setData(loadedData);
-          setLastSaveTime(new Date().toISOString());
-        } else {
-          setData(defaultData);
-        }
-      } catch (error) {
-        console.error('Error loading initial data:', error);
-        setData(defaultData);
-      }
-    };
-
-    loadInitialData();
-  }, [isInitialized, toolName, defaultData, getStoreName, loadFromIndexedDB]);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (!autoSave || !hasUnsavedChanges || !isInitialized) return;
-
-    const saveInterval = setInterval(async () => {
-      await saveData(data, false);
-    }, autoSaveInterval);
-
-    return () => clearInterval(saveInterval);
-  }, [autoSave, hasUnsavedChanges, data, autoSaveInterval, isInitialized]);
-
-  // Save data to IndexedDB
-  const saveData = useCallback(async (newData: T, showToast: boolean = true): Promise<boolean> => {
-    if (!isInitialized) return false;
-
+  // Export universel optimisé
+  const exportUniversalData = useCallback(async (options: UniversalExportOptions = {}) => {
     try {
-      const storeName = getStoreName(toolName);
-      const success = await saveToIndexedDB(storeName, toolName, newData);
+      console.log('🚀 Début export universel optimisé...');
       
-      if (success) {
-        setHasUnsavedChanges(false);
-        setLastSaveTime(new Date().toISOString());
-        
-        if (showToast) {
-          toast({
-            title: "Données sauvegardées",
-            description: "Vos données ont été sauvegardées avec succès",
-          });
-        }
-      }
+      const allData = await getAllData();
+      const stats = await getStorageStats();
       
-      return success;
-    } catch (error) {
-      console.error('Error saving data:', error);
-      if (showToast) {
-        toast({
-          title: "Erreur de sauvegarde",
-          description: "Impossible de sauvegarder les données",
-          variant: "destructive",
-        });
+      // Filtrer les outils si spécifié
+      let filteredData = allData;
+      if (options.selectedTools) {
+        filteredData = Object.fromEntries(
+          Object.entries(allData).filter(([tool]) => options.selectedTools!.includes(tool))
+        );
       }
-      return false;
-    }
-  }, [isInitialized, toolName, getStoreName, saveToIndexedDB, toast]);
 
-  // Update data
-  const updateData = useCallback(async (newData: T, autoSaveNow: boolean = false) => {
-    setData(newData);
-    setHasUnsavedChanges(true);
-    
-    if (autoSaveNow) {
-      await saveData(newData, false);
-    }
-  }, [saveData]);
-
-  // Export data as JSON
-  const exportData = useCallback(() => {
-    try {
-      const exportPayload = {
-        tool: toolName,
+      const universalData: UniversalData = {
+        version: "2.1.0",
         exportDate: new Date().toISOString(),
-        version: "2.0",
-        data: data
+        application: "Outils Pratiques",
+        tools: filteredData,
+        metadata: {
+          totalSize: stats?.estimatedSize || 0,
+          toolCount: Object.keys(filteredData).length,
+          exportOptions: options
+        }
       };
+
+      const dataString = JSON.stringify(universalData, null, 2);
       
-      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-        type: 'application/json'
-      });
+      // Compression optionnelle (simple pour l'instant)
+      const blob = new Blob([dataString], { type: 'application/json' });
       
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${toolName}-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
+      a.download = `outils-pratiques-universal-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast({
-        title: "Export réussi",
-        description: "Les données ont été exportées avec succès",
+        title: "Export universel réussi",
+        description: `${Object.keys(filteredData).length} outils exportés`,
       });
+
+      console.log('✅ Export universel terminé');
+      return true;
     } catch (error) {
-      console.error('Export error:', error);
+      console.error('❌ Erreur export universel:', error);
       toast({
         title: "Erreur d'export",
         description: "Impossible d'exporter les données",
         variant: "destructive",
       });
+      return false;
     }
-  }, [data, toolName, toast]);
+  }, [getAllData, getStorageStats, toast]);
 
-  // Import data from JSON file
-  const importData = useCallback(async (file: File): Promise<boolean> => {
+  // Import universel optimisé
+  const importUniversalData = useCallback(async (file: File, mergeMode: 'replace' | 'merge' = 'replace') => {
     try {
-      const text = await file.text();
-      const importedData = JSON.parse(text);
+      console.log('🚀 Début import universel optimisé...');
       
-      // Validate imported data structure
-      if (!importedData.data || (importedData.tool && importedData.tool !== toolName)) {
+      const text = await file.text();
+      const universalData: UniversalData = JSON.parse(text);
+      
+      // Validation
+      if (!universalData.tools || !universalData.version) {
         throw new Error('Format de fichier incorrect');
       }
+
+      const { db } = useDexieDB();
       
-      await updateData(importedData.data, true);
-      
-      toast({
-        title: "Import réussi",
-        description: "Les données ont été importées avec succès",
+      // Import en transaction pour assurer la cohérence
+      await db.transaction('rw', db.storedData, async () => {
+        if (mergeMode === 'replace') {
+          // Supprimer les données existantes des outils à importer
+          const toolsToImport = Object.keys(universalData.tools);
+          for (const tool of toolsToImport) {
+            await db.storedData.where('tool').equals(tool).delete();
+          }
+        }
+
+        // Importer les nouvelles données
+        for (const [tool, data] of Object.entries(universalData.tools)) {
+          await db.storedData.put({
+            id: `${tool}-main`,
+            tool,
+            data,
+            timestamp: Date.now(),
+            lastModified: new Date().toISOString(),
+            synced: false
+          });
+        }
       });
-      
+
+      toast({
+        title: "Import universel réussi",
+        description: `${Object.keys(universalData.tools).length} outils importés`,
+      });
+
+      console.log('✅ Import universel terminé');
       return true;
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('❌ Erreur import universel:', error);
       toast({
         title: "Erreur d'import",
-        description: "Format de fichier incorrect ou données corrompues",
+        description: "Format de fichier incorrect ou erreur de traitement",
         variant: "destructive",
       });
       return false;
     }
-  }, [toolName, updateData, toast]);
+  }, [toast]);
 
-  // Reset data to default
-  const resetData = useCallback(async () => {
-    await updateData(defaultData, true);
-    toast({
-      title: "Données réinitialisées",
-      description: "Toutes les données ont été supprimées",
-    });
-  }, [defaultData, updateData, toast]);
-
-  // Export all app data
-  const exportAllAppData = useCallback(async () => {
+  // Reset universel
+  const resetUniversalData = useCallback(async () => {
     try {
-      const allData = await exportAllData();
-      
-      const blob = new Blob([JSON.stringify(allData, null, 2)], {
-        type: 'application/json'
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lovable-tools-full-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await clearAllData();
       
       toast({
-        title: "Export complet réussi",
-        description: "Toutes les données de l'application ont été exportées",
+        title: "Reset universel réussi",
+        description: "Toutes les données ont été supprimées",
       });
+
+      return true;
     } catch (error) {
-      console.error('Error exporting all data:', error);
+      console.error('❌ Erreur reset universel:', error);
       toast({
-        title: "Erreur d'export global",
-        description: "Impossible d'exporter toutes les données",
+        title: "Erreur de reset",
+        description: "Impossible de supprimer toutes les données",
         variant: "destructive",
       });
+      return false;
     }
-  }, [exportAllData, toast]);
+  }, [clearAllData, toast]);
 
-  // Get storage information
-  const getStorageStatus = useCallback(async () => {
-    const storageInfo = await getStorageInfo();
-    return storageInfo;
-  }, [getStorageInfo]);
+  // Statistiques globales
+  const getUniversalStats = useCallback(async () => {
+    try {
+      const stats = await getStorageStats();
+      const allData = await getAllData();
+      
+      return {
+        ...stats,
+        tools: Object.keys(allData),
+        lastActivity: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('❌ Erreur stats universelles:', error);
+      return null;
+    }
+  }, [getStorageStats, getAllData]);
 
   return {
-    // Data state
-    data,
-    setData: updateData,
-    isLoading,
-    isInitialized,
-    hasUnsavedChanges,
-    lastSaveTime,
-    
-    // Data operations
-    saveData,
-    exportData,
-    importData,
-    resetData,
-    
-    // Global operations
-    exportAllAppData,
-    clearAllData,
-    getStorageStatus
+    exportUniversalData,
+    importUniversalData,
+    resetUniversalData,
+    getUniversalStats
   };
 };

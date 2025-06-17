@@ -34,7 +34,11 @@ export const CalculatorImproved = () => {
       label: "Programmeur",
       icon: <Code className="w-4 h-4" />,
       badge: "Binaire & Hex",
-      content: <ProgrammerCalculator {...calculatorState} />
+      content: <ProgrammerCalculator 
+        history={calculatorState.history}
+        setHistory={calculatorState.setHistory}
+        clearAll={calculatorState.clearAll}
+      />
     },
     {
       id: "history",
@@ -71,4 +75,3 @@ export const CalculatorImproved = () => {
     </TooltipProvider>
   );
 };
-

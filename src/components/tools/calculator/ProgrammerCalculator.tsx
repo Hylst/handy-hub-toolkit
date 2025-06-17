@@ -9,22 +9,26 @@ import { Copy, RotateCcw, Code, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProgrammerCalculatorProps {
-  history: Array<{ expression: string; result: string }>;
-  addToHistory: (expression: string, result: string) => void;
-  clearHistory: () => void;
+  history: string[];
+  setHistory: (history: string[]) => void;
+  clearAll: () => void;
 }
 
 type NumberBase = 'dec' | 'hex' | 'oct' | 'bin';
 
 export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
   history,
-  addToHistory,
-  clearHistory,
+  setHistory,
+  clearAll,
 }) => {
   const [value, setValue] = useState<string>("0");
   const [inputBase, setInputBase] = useState<NumberBase>('dec');
   const [expression, setExpression] = useState<string>("");
   const { toast } = useToast();
+
+  const addToHistory = (calculation: string) => {
+    setHistory([calculation, ...history.slice(0, 19)]);
+  };
 
   // Convert number between bases
   const convertToBase = (num: number, base: NumberBase): string => {
@@ -63,19 +67,19 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
       case 'NOT':
         const result = ~currentNum;
         const expr = `NOT ${value}(${inputBase})`;
-        addToHistory(expr, convertToBase(result, inputBase));
+        addToHistory(`${expr} = ${convertToBase(result, inputBase)}`);
         setCurrentNumber(result);
         break;
       case 'LSH':
         const lshResult = currentNum << 1;
         const lshExpr = `${value}(${inputBase}) << 1`;
-        addToHistory(lshExpr, convertToBase(lshResult, inputBase));
+        addToHistory(`${lshExpr} = ${convertToBase(lshResult, inputBase)}`);
         setCurrentNumber(lshResult);
         break;
       case 'RSH':
         const rshResult = currentNum >> 1;
         const rshExpr = `${value}(${inputBase}) >> 1`;
-        addToHistory(rshExpr, convertToBase(rshResult, inputBase));
+        addToHistory(`${rshExpr} = ${convertToBase(rshResult, inputBase)}`);
         setCurrentNumber(rshResult);
         break;
     }
@@ -95,7 +99,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
       }
       
       const expr = `${expression} ${op} ${value}(${inputBase})`;
-      addToHistory(expr, convertToBase(result, inputBase));
+      addToHistory(`${expr} = ${convertToBase(result, inputBase)}`);
       setCurrentNumber(result);
       setExpression("");
     } else {
@@ -116,7 +120,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
     }
   };
 
-  const clearAll = () => {
+  const clearLocal = () => {
     setValue("0");
     setExpression("");
   };
@@ -155,7 +159,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
                 <SelectItem value="bin">BIN (2)</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={clearAll}>
+            <Button variant="outline" size="sm" onClick={clearLocal}>
               <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
@@ -224,7 +228,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             ))}
             
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => performBinaryOperation('AND')}
               className="h-12 text-sm"
             >
@@ -244,7 +248,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             ))}
             
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => performBinaryOperation('OR')}
               className="h-12 text-sm"
             >
@@ -260,7 +264,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             </Button>
             
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => performBinaryOperation('XOR')}
               className="h-12 text-sm"
             >
@@ -268,7 +272,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             </Button>
             
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => performBitwiseOperation('NOT')}
               className="h-12 text-sm"
             >
@@ -276,7 +280,7 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             </Button>
             
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => performBitwiseOperation('LSH')}
               className="h-12 text-sm"
             >
@@ -385,4 +389,3 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
     </div>
   );
 };
-

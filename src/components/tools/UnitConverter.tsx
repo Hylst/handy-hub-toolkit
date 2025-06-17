@@ -26,7 +26,7 @@ const UnitConverter = () => {
       id: "length",
       label: "Longueurs",
       icon: <Ruler className="w-4 h-4" />,
-      badge: "12 unités",
+      badge: "13 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Longueurs"
@@ -43,7 +43,7 @@ const UnitConverter = () => {
       id: "weight",
       label: "Poids",
       icon: <Weight className="w-4 h-4" />,
-      badge: "8 unités",
+      badge: "11 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Poids"
@@ -60,7 +60,7 @@ const UnitConverter = () => {
       id: "temperature",
       label: "Température",
       icon: <Thermometer className="w-4 h-4" />,
-      badge: "4 unités",
+      badge: "5 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Température"
@@ -77,7 +77,7 @@ const UnitConverter = () => {
       id: "volume",
       label: "Volume",
       icon: <Volume className="w-4 h-4" />,
-      badge: "10 unités",
+      badge: "14 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Volume"
@@ -94,7 +94,7 @@ const UnitConverter = () => {
       id: "area",
       label: "Surface",
       icon: <Scale className="w-4 h-4" />,
-      badge: "7 unités",
+      badge: "11 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Surface"
@@ -111,7 +111,7 @@ const UnitConverter = () => {
       id: "speed",
       label: "Vitesse",
       icon: <Activity className="w-4 h-4" />,
-      badge: "6 unités",
+      badge: "7 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Vitesse"
@@ -128,7 +128,7 @@ const UnitConverter = () => {
       id: "pressure",
       label: "Pression",
       icon: <Droplets className="w-4 h-4" />,
-      badge: "6 unités",
+      badge: "10 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Pression"
@@ -145,7 +145,7 @@ const UnitConverter = () => {
       id: "energy",
       label: "Énergie",
       icon: <Fuel className="w-4 h-4" />,
-      badge: "7 unités",
+      badge: "11 unités",
       content: (
         <ConversionTab
           title="Convertisseur d'Énergie"
@@ -162,7 +162,7 @@ const UnitConverter = () => {
       id: "power",
       label: "Puissance",
       icon: <Zap className="w-4 h-4" />,
-      badge: "5 unités",
+      badge: "8 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Puissance"
@@ -179,7 +179,7 @@ const UnitConverter = () => {
       id: "currency",
       label: "Devises",
       icon: <DollarSign className="w-4 h-4" />,
-      badge: "5 devises",
+      badge: "12 devises",
       content: (
         <ConversionTab
           title="Convertisseur de Devises"
@@ -196,7 +196,7 @@ const UnitConverter = () => {
       id: "time",
       label: "Temps",
       icon: <Clock className="w-4 h-4" />,
-      badge: "8 unités",
+      badge: "12 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Temps"
@@ -213,7 +213,7 @@ const UnitConverter = () => {
       id: "data",
       label: "Données",
       icon: <Palette className="w-4 h-4" />,
-      badge: "8 unités",
+      badge: "12 unités",
       content: (
         <ConversionTab
           title="Convertisseur de Données"
@@ -254,3 +254,4 @@ const UnitConverter = () => {
 };
 
 export default UnitConverter;
+

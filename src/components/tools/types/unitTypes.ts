@@ -38,3 +38,4 @@ export type ConversionType =
   | "time" 
   | "currency" 
   | "data";
+

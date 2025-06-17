@@ -76,9 +76,8 @@ export const ScientificCalculator = ({
         </div>
       </div>
 
-      {/* Interface scientifique étendue */}
+      {/* Fonctions trigonométriques */}
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
-        {/* Fonctions trigonométriques */}
         {[
           { func: "sin", color: "red", tooltip: `Sinus (${isRadians ? "radians" : "degrés"})` },
           { func: "cos", color: "red", tooltip: "Cosinus" },
@@ -103,15 +102,17 @@ export const ScientificCalculator = ({
             </TooltipContent>
           </Tooltip>
         ))}
+      </div>
 
-        {/* Logarithmes */}
+      {/* Fonctions hyperboliques */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
         {[
+          { func: "sinh", color: "orange", tooltip: "Sinus hyperbolique" },
+          { func: "cosh", color: "orange", tooltip: "Cosinus hyperbolique" },
+          { func: "tanh", color: "orange", tooltip: "Tangente hyperbolique" },
+          { func: "exp", color: "purple", tooltip: "Exponentielle (e^x)" },
           { func: "ln", color: "green", tooltip: "Logarithme naturel (base e)" },
-          { func: "log", color: "green", tooltip: "Logarithme décimal (base 10)" },
-          { func: "log2", label: "log₂", color: "green", tooltip: "Logarithme base 2" },
-          { func: "sqrt", label: "√", color: "blue", tooltip: "Racine carrée" },
-          { func: "cbrt", label: "∛", color: "blue", tooltip: "Racine cubique" },
-          { func: "square", label: "x²", color: "blue", tooltip: "Carré du nombre" }
+          { func: "log", color: "green", tooltip: "Logarithme décimal (base 10)" }
         ].map(({ func, label, color, tooltip }) => (
           <Tooltip key={func}>
             <TooltipTrigger asChild>
@@ -129,14 +130,16 @@ export const ScientificCalculator = ({
             </TooltipContent>
           </Tooltip>
         ))}
+      </div>
 
-        {/* Constantes et autres fonctions */}
+      {/* Puissances et racines */}
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
         {[
-          { func: "pi", label: "π", color: "purple", tooltip: "Pi (3.14159...)" },
-          { func: "e", color: "purple", tooltip: "Nombre d'Euler (2.718...)" },
-          { func: "random", label: "Rand", color: "yellow", tooltip: "Nombre aléatoire (0-1)" },
-          { func: "factorial", label: "n!", color: "indigo", tooltip: "Factorielle" },
-          { func: "exp", color: "purple", tooltip: "Exponentielle (e^x)" },
+          { func: "square", label: "x²", color: "blue", tooltip: "Carré du nombre" },
+          { func: "cube", label: "x³", color: "blue", tooltip: "Cube du nombre" },
+          { func: "sqrt", label: "√x", color: "blue", tooltip: "Racine carrée" },
+          { func: "cbrt", label: "∛x", color: "blue", tooltip: "Racine cubique" },
+          { func: "1/x", color: "indigo", tooltip: "Inverse (1/x)" },
           { func: "abs", label: "|x|", color: "gray", tooltip: "Valeur absolue" }
         ].map(({ func, label, color, tooltip }) => (
           <Tooltip key={func}>
@@ -155,6 +158,85 @@ export const ScientificCalculator = ({
             </TooltipContent>
           </Tooltip>
         ))}
+      </div>
+
+      {/* Constantes et autres fonctions */}
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
+        {[
+          { func: "pi", label: "π", color: "purple", tooltip: "Pi (3.14159...)" },
+          { func: "e", color: "purple", tooltip: "Nombre d'Euler (2.718...)" },
+          { func: "factorial", label: "n!", color: "indigo", tooltip: "Factorielle" },
+          { func: "random", label: "Rand", color: "yellow", tooltip: "Nombre aléatoire (0-1)" },
+          { func: "negate", label: "±", color: "gray", tooltip: "Changer de signe" },
+          { func: "percent", label: "%", color: "gray", tooltip: "Pourcentage" }
+        ].map(({ func, label, color, tooltip }) => (
+          <Tooltip key={func}>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                onClick={() => scientificFunction(func)} 
+                className={`h-8 sm:h-10 bg-${color}-50 hover:bg-${color}-100 dark:bg-${color}-900/30 dark:hover:bg-${color}-800/50 text-${color}-700 dark:text-${color}-300 border-${color}-200 dark:border-${color}-700`}
+                size="sm"
+              >
+                {label || func}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+
+      {/* Opérations avancées */}
+      <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs sm:text-sm">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="outline" 
+              onClick={() => inputOperation("^")} 
+              className="h-8 sm:h-10 bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 dark:hover:bg-teal-800/50 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700"
+              size="sm"
+            >
+              x^y
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Puissance x à la puissance y</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="outline" 
+              onClick={() => inputOperation("mod")} 
+              className="h-8 sm:h-10 bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 dark:hover:bg-teal-800/50 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700"
+              size="sm"
+            >
+              mod
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Modulo (reste de la division)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="outline" 
+              onClick={() => inputOperation("root")} 
+              className="h-8 sm:h-10 bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 dark:hover:bg-teal-800/50 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700"
+              size="sm"
+            >
+              ⁿ√x
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Racine n-ième</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Clavier numérique compact */}

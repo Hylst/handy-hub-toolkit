@@ -95,6 +95,8 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
         case 'AND': result = prevNum & currentNum; break;
         case 'OR': result = prevNum | currentNum; break;
         case 'XOR': result = prevNum ^ currentNum; break;
+        case 'NAND': result = ~(prevNum & currentNum); break;
+        case 'NOR': result = ~(prevNum | currentNum); break;
         default: return;
       }
       
@@ -146,6 +148,30 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
+          {/* Affichage simultané des 4 bases */}
+          <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+            <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+              <span>HEX</span>
+              <span>DEC</span>
+              <span>OCT</span>
+              <span>BIN</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <div className={`p-2 rounded text-center font-mono ${inputBase === 'hex' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-600' : 'bg-white dark:bg-gray-800'}`}>
+                {convertToBase(currentNumber, 'hex')}
+              </div>
+              <div className={`p-2 rounded text-center font-mono ${inputBase === 'dec' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-600' : 'bg-white dark:bg-gray-800'}`}>
+                {convertToBase(currentNumber, 'dec')}
+              </div>
+              <div className={`p-2 rounded text-center font-mono ${inputBase === 'oct' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-600' : 'bg-white dark:bg-gray-800'}`}>
+                {convertToBase(currentNumber, 'oct')}
+              </div>
+              <div className={`p-2 rounded text-center font-mono text-xs break-all ${inputBase === 'bin' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-600' : 'bg-white dark:bg-gray-800'}`}>
+                {convertToBase(currentNumber, 'bin')}
+              </div>
+            </div>
+          </div>
+
           {/* Base selector */}
           <div className="flex gap-2">
             <Select value={inputBase} onValueChange={(value: NumberBase) => setInputBase(value)}>
@@ -179,41 +205,95 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             />
           </div>
 
-          {/* Number input buttons */}
+          {/* Opérations logiques principales */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="default"
+              onClick={() => performBinaryOperation('AND')}
+              className="h-12 text-sm bg-green-600 hover:bg-green-700"
+            >
+              AND
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => performBinaryOperation('OR')}
+              className="h-12 text-sm bg-blue-600 hover:bg-blue-700"
+            >
+              OR
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => performBinaryOperation('XOR')}
+              className="h-12 text-sm bg-purple-600 hover:bg-purple-700"
+            >
+              XOR
+            </Button>
+          </div>
+
+          {/* Opérations logiques avancées */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="default"
+              onClick={() => performBinaryOperation('NAND')}
+              className="h-12 text-sm bg-orange-600 hover:bg-orange-700"
+            >
+              NAND
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => performBinaryOperation('NOR')}
+              className="h-12 text-sm bg-red-600 hover:bg-red-700"
+            >
+              NOR
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => performBitwiseOperation('NOT')}
+              className="h-12 text-sm bg-gray-600 hover:bg-gray-700"
+            >
+              NOT
+            </Button>
+          </div>
+
+          {/* Chiffres hexadécimaux */}
+          {inputBase === 'hex' && (
+            <div className="grid grid-cols-3 gap-2">
+              {['A', 'B', 'C', 'D', 'E', 'F'].map(digit => (
+                <Button
+                  key={digit}
+                  variant="outline"
+                  onClick={() => handleNumberInput(digit)}
+                  className="h-12 text-lg bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:hover:bg-yellow-800/50"
+                >
+                  {digit}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {/* Chiffres numériques */}
           <div className="grid grid-cols-4 gap-2">
-            {inputBase === 'hex' && ['A', 'B', 'C', 'D', 'E', 'F'].map(digit => (
+            {['7', '8', '9'].map(digit => (
               <Button
                 key={digit}
                 variant="outline"
                 onClick={() => handleNumberInput(digit)}
                 className="h-12 text-lg"
+                disabled={
+                  (inputBase === 'oct' && parseInt(digit) >= 8) ||
+                  (inputBase === 'bin' && parseInt(digit) >= 2)
+                }
               >
                 {digit}
               </Button>
             ))}
-            
-            {(inputBase === 'oct' || inputBase === 'dec' || inputBase === 'hex') && 
-             ['7', '8', '9'].map(digit => (
-              <Button
-                key={digit}
-                variant="outline"
-                onClick={() => handleNumberInput(digit)}
-                className="h-12 text-lg"
-                disabled={inputBase === 'oct' && parseInt(digit) >= 8}
-              >
-                {digit}
-              </Button>
-            ))}
-            
-            {(inputBase === 'dec' || inputBase === 'hex') && (
-              <Button
-                variant="outline"
-                onClick={() => handleNumberInput('9')}
-                className="h-12 text-lg"
-              >
-                9
-              </Button>
-            )}
+            <Button
+              variant="default"
+              onClick={() => performBitwiseOperation('LSH')}
+              className="h-12 text-sm bg-indigo-600 hover:bg-indigo-700"
+            >
+              &lt;&lt;
+            </Button>
 
             {['4', '5', '6'].map(digit => (
               <Button
@@ -226,13 +306,12 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
                 {digit}
               </Button>
             ))}
-            
             <Button
               variant="default"
-              onClick={() => performBinaryOperation('AND')}
-              className="h-12 text-sm"
+              onClick={() => performBitwiseOperation('RSH')}
+              className="h-12 text-sm bg-indigo-600 hover:bg-indigo-700"
             >
-              AND
+              &gt;&gt;
             </Button>
 
             {['1', '2', '3'].map(digit => (
@@ -246,75 +325,31 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
                 {digit}
               </Button>
             ))}
-            
             <Button
-              variant="default"
-              onClick={() => performBinaryOperation('OR')}
-              className="h-12 text-sm"
+              variant="outline"
+              onClick={() => copyToClipboard(value)}
+              className="h-12"
             >
-              OR
+              <Copy className="w-4 h-4" />
             </Button>
 
             <Button
               variant="outline"
               onClick={() => handleNumberInput('0')}
-              className="h-12 text-lg"
+              className="col-span-4 h-12 text-lg"
             >
               0
-            </Button>
-            
-            <Button
-              variant="default"
-              onClick={() => performBinaryOperation('XOR')}
-              className="h-12 text-sm"
-            >
-              XOR
-            </Button>
-            
-            <Button
-              variant="default"
-              onClick={() => performBitwiseOperation('NOT')}
-              className="h-12 text-sm"
-            >
-              NOT
-            </Button>
-            
-            <Button
-              variant="default"
-              onClick={() => performBitwiseOperation('LSH')}
-              className="h-12 text-sm"
-            >
-              &lt;&lt;
-            </Button>
-          </div>
-
-          {/* Shift operations */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => performBitwiseOperation('RSH')}
-              className="h-10"
-            >
-              Shift Right (&gt;&gt;)
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => copyToClipboard(value)}
-              className="h-10"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copier
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Conversions panel */}
+      {/* Conversions panel amélioré */}
       <Card className="shadow-lg border-2">
         <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50">
           <CardTitle className="flex items-center gap-2">
             <Hash className="w-5 h-5 text-green-600 dark:text-green-400" />
-            Conversions
+            Conversions & Informations
             <Badge variant="secondary" className="text-xs">Temps réel</Badge>
           </CardTitle>
         </CardHeader>
@@ -377,11 +412,35 @@ export const ProgrammerCalculator: React.FC<ProgrammerCalculatorProps> = ({
             </div>
           </div>
 
-          {/* Bit representation */}
+          {/* Bit representation avec groupement par 8 bits */}
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <h4 className="font-medium mb-3 text-gray-700 dark:text-gray-300">Représentation 32-bit:</h4>
-            <div className="font-mono text-xs break-all bg-white dark:bg-gray-800 p-3 rounded border">
-              {convertToBase(currentNumber, 'bin').padStart(32, '0').match(/.{1,4}/g)?.join(' ')}
+            <h4 className="font-medium mb-3 text-gray-700 dark:text-gray-300">Représentation 32-bit (par octets):</h4>
+            <div className="font-mono text-xs break-all bg-white dark:bg-gray-800 p-3 rounded border space-y-1">
+              {convertToBase(currentNumber, 'bin').padStart(32, '0').match(/.{1,8}/g)?.map((byte, index) => (
+                <div key={index} className="flex justify-between">
+                  <span className="text-gray-500">Byte {3-index}:</span>
+                  <span>{byte}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Informations supplémentaires */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <h4 className="font-medium mb-3 text-gray-700 dark:text-gray-300">Informations:</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Bits utilisés:</span>
+                <span className="font-mono">{Math.max(1, Math.floor(Math.log2(Math.abs(currentNumber) || 1)) + 1)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Signe:</span>
+                <span className="font-mono">{currentNumber >= 0 ? 'Positif' : 'Négatif'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Parité:</span>
+                <span className="font-mono">{currentNumber % 2 === 0 ? 'Pair' : 'Impair'}</span>
+              </div>
             </div>
           </div>
         </CardContent>

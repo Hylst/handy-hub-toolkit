@@ -79,9 +79,9 @@ export const ScientificCalculator = ({
       {/* Fonctions trigonométriques */}
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
         {[
-          { func: "sin", color: "red", tooltip: `Sinus (${isRadians ? "radians" : "degrés"})` },
-          { func: "cos", color: "red", tooltip: "Cosinus" },
-          { func: "tan", color: "red", tooltip: "Tangente" },
+          { func: "sin", label: "sin", color: "red", tooltip: `Sinus (${isRadians ? "radians" : "degrés"})` },
+          { func: "cos", label: "cos", color: "red", tooltip: "Cosinus" },
+          { func: "tan", label: "tan", color: "red", tooltip: "Tangente" },
           { func: "asin", label: "sin⁻¹", color: "red", tooltip: "Arc sinus" },
           { func: "acos", label: "cos⁻¹", color: "red", tooltip: "Arc cosinus" },
           { func: "atan", label: "tan⁻¹", color: "red", tooltip: "Arc tangente" }
@@ -94,7 +94,7 @@ export const ScientificCalculator = ({
                 className={`h-8 sm:h-10 bg-${color}-50 hover:bg-${color}-100 dark:bg-${color}-900/30 dark:hover:bg-${color}-800/50 text-${color}-700 dark:text-${color}-300 border-${color}-200 dark:border-${color}-700`}
                 size="sm"
               >
-                {label || func}
+                {label}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -107,12 +107,12 @@ export const ScientificCalculator = ({
       {/* Fonctions hyperboliques */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
         {[
-          { func: "sinh", color: "orange", tooltip: "Sinus hyperbolique" },
-          { func: "cosh", color: "orange", tooltip: "Cosinus hyperbolique" },
-          { func: "tanh", color: "orange", tooltip: "Tangente hyperbolique" },
-          { func: "exp", color: "purple", tooltip: "Exponentielle (e^x)" },
-          { func: "ln", color: "green", tooltip: "Logarithme naturel (base e)" },
-          { func: "log", color: "green", tooltip: "Logarithme décimal (base 10)" }
+          { func: "sinh", label: "sinh", color: "orange", tooltip: "Sinus hyperbolique" },
+          { func: "cosh", label: "cosh", color: "orange", tooltip: "Cosinus hyperbolique" },
+          { func: "tanh", label: "tanh", color: "orange", tooltip: "Tangente hyperbolique" },
+          { func: "exp", label: "exp", color: "purple", tooltip: "Exponentielle (e^x)" },
+          { func: "ln", label: "ln", color: "green", tooltip: "Logarithme naturel (base e)" },
+          { func: "log", label: "log", color: "green", tooltip: "Logarithme décimal (base 10)" }
         ].map(({ func, label, color, tooltip }) => (
           <Tooltip key={func}>
             <TooltipTrigger asChild>
@@ -122,7 +122,7 @@ export const ScientificCalculator = ({
                 className={`h-8 sm:h-10 bg-${color}-50 hover:bg-${color}-100 dark:bg-${color}-900/30 dark:hover:bg-${color}-800/50 text-${color}-700 dark:text-${color}-300 border-${color}-200 dark:border-${color}-700`}
                 size="sm"
               >
-                {label || func}
+                {label}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -139,7 +139,7 @@ export const ScientificCalculator = ({
           { func: "cube", label: "x³", color: "blue", tooltip: "Cube du nombre" },
           { func: "sqrt", label: "√x", color: "blue", tooltip: "Racine carrée" },
           { func: "cbrt", label: "∛x", color: "blue", tooltip: "Racine cubique" },
-          { func: "1/x", color: "indigo", tooltip: "Inverse (1/x)" },
+          { func: "1/x", label: "1/x", color: "indigo", tooltip: "Inverse (1/x)" },
           { func: "abs", label: "|x|", color: "gray", tooltip: "Valeur absolue" }
         ].map(({ func, label, color, tooltip }) => (
           <Tooltip key={func}>
@@ -150,7 +150,7 @@ export const ScientificCalculator = ({
                 className={`h-8 sm:h-10 bg-${color}-50 hover:bg-${color}-100 dark:bg-${color}-900/30 dark:hover:bg-${color}-800/50 text-${color}-700 dark:text-${color}-300 border-${color}-200 dark:border-${color}-700`}
                 size="sm"
               >
-                {label || func}
+                {label}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -164,7 +164,7 @@ export const ScientificCalculator = ({
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 text-xs sm:text-sm">
         {[
           { func: "pi", label: "π", color: "purple", tooltip: "Pi (3.14159...)" },
-          { func: "e", color: "purple", tooltip: "Nombre d'Euler (2.718...)" },
+          { func: "e", label: "e", color: "purple", tooltip: "Nombre d'Euler (2.718...)" },
           { func: "factorial", label: "n!", color: "indigo", tooltip: "Factorielle" },
           { func: "random", label: "Rand", color: "yellow", tooltip: "Nombre aléatoire (0-1)" },
           { func: "negate", label: "±", color: "gray", tooltip: "Changer de signe" },
@@ -178,7 +178,7 @@ export const ScientificCalculator = ({
                 className={`h-8 sm:h-10 bg-${color}-50 hover:bg-${color}-100 dark:bg-${color}-900/30 dark:hover:bg-${color}-800/50 text-${color}-700 dark:text-${color}-300 border-${color}-200 dark:border-${color}-700`}
                 size="sm"
               >
-                {label || func}
+                {label}
               </Button>
             </TooltipTrigger>
             <TooltipContent>

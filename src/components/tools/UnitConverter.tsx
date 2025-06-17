@@ -17,7 +17,7 @@ import {
   powerUnits, 
   currencyUnits, 
   timeUnits, 
-  digitalUnits 
+  dataUnits 
 } from "./data/unitDefinitions";
 
 const UnitConverter = () => {
@@ -210,18 +210,18 @@ const UnitConverter = () => {
       )
     },
     {
-      id: "digital",
-      label: "Numérique",
+      id: "data",
+      label: "Données",
       icon: <Palette className="w-4 h-4" />,
       badge: "8 unités",
       content: (
         <ConversionTab
-          title="Convertisseur Numérique"
+          title="Convertisseur de Données"
           icon={<Palette className="w-6 h-6 text-pink-600 dark:text-pink-400" />}
-          units={digitalUnits}
+          units={dataUnits}
           defaultFromUnit="byte"
           defaultToUnit="megabyte"
-          conversionType="digital"
+          conversionType="data"
           color="pink"
         />
       )

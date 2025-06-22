@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Settings, RotateCcw, Function } from "lucide-react";
+import { TrendingUp, Settings, RotateCcw, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GraphingCalculatorProps {
@@ -207,7 +207,7 @@ export const GraphingCalculator: React.FC<GraphingCalculatorProps> = ({
               onClick={generateGraph}
               className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white"
             >
-              <Function className="w-4 h-4 mr-2" />
+              <Calculator className="w-4 h-4 mr-2" />
               Tracer
             </Button>
             <Button

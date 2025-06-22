@@ -6,7 +6,6 @@ import { fr } from "date-fns/locale";
 import { ToolHeader } from "@/components/ui/tool-header";
 import { ToolContainer } from "@/components/ui/tool-container";
 import { ToolTabSystem } from "@/components/ui/tool-tab-system";
-import { Badge } from "@/components/ui/badge";
 import { useDateCalculations } from "./dateCalculator/hooks/useDateCalculations";
 import { DateDifferenceTab } from "./dateCalculator/components/DateDifferenceTab";
 import { DateCalculationTab } from "./dateCalculator/components/DateCalculationTab";
@@ -107,22 +106,10 @@ export const DateCalculatorAdvanced = () => {
   ];
 
   const headerBadges = [
-    <Badge key="precision" variant="secondary" className="text-xs px-3 py-2">
-      <Zap className="w-3 h-3 mr-1" />
-      Calculs précis
-    </Badge>,
-    <Badge key="timezone" variant="secondary" className="text-xs px-3 py-2">
-      <Globe className="w-3 h-3 mr-1" />
-      Fuseaux horaires
-    </Badge>,
-    <Badge key="planning" variant="secondary" className="text-xs px-3 py-2">
-      <Target className="w-3 h-3 mr-1" />
-      Planning avancé
-    </Badge>,
-    <Badge key="sync" variant="secondary" className="text-xs px-3 py-2">
-      <History className="w-3 h-3 mr-1" />
-      Sync hors ligne
-    </Badge>
+    "Calculs précis",
+    "Fuseaux horaires", 
+    "Planning avancé",
+    "Sync hors ligne"
   ];
 
   return (
@@ -133,7 +120,7 @@ export const DateCalculatorAdvanced = () => {
           subtitle={`${format(currentTime, "HH:mm:ss", { locale: fr })} - ${format(currentTime, "EEEE dd MMMM yyyy", { locale: fr })}`}
           description="Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore avec notre suite d'outils professionnels. Données synchronisées hors ligne avec import/export."
           icon={<Clock className="w-8 h-8" />}
-          badges={headerBadges.map(badge => badge.props.children.props.children)}
+          badges={headerBadges}
           gradient="purple"
         />
 

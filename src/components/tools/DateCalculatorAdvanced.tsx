@@ -6,12 +6,13 @@ import { fr } from "date-fns/locale";
 import { ToolHeader } from "@/components/ui/tool-header";
 import { ToolContainer } from "@/components/ui/tool-container";
 import { ToolTabSystem } from "@/components/ui/tool-tab-system";
-import { useDateCalculations } from "./dateCalculator/hooks/useDateCalculations";
+import { useDateCalculationsEnhanced } from "./dateCalculator/hooks/useDateCalculationsEnhanced";
 import { DateDifferenceTab } from "./dateCalculator/components/DateDifferenceTab";
-import { DateCalculationTabEnhanced } from "./dateCalculator/components/DateCalculationTabEnhanced";
+import { DateCalculationTabEnhancedV2 } from "./dateCalculator/components/DateCalculationTabEnhancedV2";
 import { AgeCalculatorTabEnhanced } from "./dateCalculator/components/AgeCalculatorTabEnhanced";
 import { EventPlannerTabEnhanced } from "./dateCalculator/components/EventPlannerTabEnhanced";
 import { TimeZoneTab } from "./dateCalculator/components/TimeZoneTab";
+import { CalculationHistoryTab } from "./dateCalculator/components/CalculationHistoryTab";
 
 export const DateCalculatorAdvanced = () => {
   // États pour différents calculs
@@ -26,13 +27,17 @@ export const DateCalculatorAdvanced = () => {
   // Horloge temps réel
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Hook pour les calculs
+  // Hook pour les calculs avec historique amélioré
   const {
     calculationHistory,
     calculateDateDifference,
     calculateNewDate,
-    calculateAge
-  } = useDateCalculations();
+    calculateAge,
+    clearHistory,
+    deleteHistoryEntry,
+    exportHistory,
+    importHistory
+  } = useDateCalculationsEnhanced();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -61,9 +66,9 @@ export const DateCalculatorAdvanced = () => {
       id: "calculation",
       label: "Calculs",
       icon: <Calculator className="w-4 h-4" />,
-      badge: "±",
+      badge: "Multi-ops",
       content: (
-        <DateCalculationTabEnhanced
+        <DateCalculationTabEnhancedV2
           baseDate={baseDate}
           setBaseDate={setBaseDate}
           operation={operation}
@@ -90,9 +95,24 @@ export const DateCalculatorAdvanced = () => {
       )
     },
     {
+      id: "history",
+      label: "Historique",
+      icon: <History className="w-4 h-4" />,
+      badge: `${calculationHistory.length}`,
+      content: (
+        <CalculationHistoryTab
+          history={calculationHistory}
+          onClearHistory={clearHistory}
+          onDeleteEntry={deleteHistoryEntry}
+          onExportHistory={exportHistory}
+          onImportHistory={importHistory}
+        />
+      )
+    },
+    {
       id: "planner",
       label: "Planning",
-      icon: <History className="w-4 h-4" />,
+      icon: <Target className="w-4 h-4" />,
       badge: "Événements",
       content: <EventPlannerTabEnhanced />
     },
@@ -106,19 +126,19 @@ export const DateCalculatorAdvanced = () => {
   ];
 
   const headerBadges = [
-    "Calculs précis",
-    "Date sans horaire", 
-    "Planning avancé",
-    "Interface optimisée"
+    "Calculs multi-opérations",
+    "Historique complet", 
+    "Export/Import",
+    "Stockage sécurisé"
   ];
 
   return (
     <ToolContainer variant="wide" spacing="lg">
       <div className="space-y-6">
         <ToolHeader
-          title="Suite Avancée Dates & Temps"
+          title="Suite Avancée Dates & Temps Pro"
           subtitle={`${format(currentTime, "HH:mm:ss", { locale: fr })} - ${format(currentTime, "EEEE dd MMMM yyyy", { locale: fr })}`}
-          description="Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore avec notre suite d'outils professionnels. Interface optimisée avec option date seule ou date+heure."
+          description="Calculez des différences temporelles, effectuez des opérations multiples, gérez votre historique complet et planifiez vos événements avec notre suite d'outils professionnels améliorée."
           icon={<Clock className="w-8 h-8" />}
           badges={headerBadges}
           gradient="purple"
@@ -130,7 +150,7 @@ export const DateCalculatorAdvanced = () => {
           orientation="horizontal"
           size="md"
           className="w-full"
-          tabsListClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+          tabsListClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
         />
       </div>
     </ToolContainer>

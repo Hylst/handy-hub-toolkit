@@ -1,5 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
+import { useFallbackStorage, FallbackStorageManager } from './useFallbackStorage';
 
 interface IndexedDBConfig {
   dbName: string;
@@ -23,23 +25,34 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [db, setDb] = useState<IDBDatabase | null>(null);
+  const [useFallback, setUseFallback] = useState(false);
+  
+  const fallbackStorage = useFallbackStorage();
 
-  // Initialize IndexedDB
+  // Initialize IndexedDB with fallback
   useEffect(() => {
     const initDB = async () => {
       try {
+        console.log('Attempting to initialize IndexedDB...');
+        
+        // Check if IndexedDB is available
+        if (!window.indexedDB) {
+          console.warn('IndexedDB not available, using fallback storage');
+          setUseFallback(true);
+          setIsInitialized(true);
+          return;
+        }
+
         const request = indexedDB.open(config.dbName, config.version);
         
         request.onerror = () => {
-          console.error('Error opening IndexedDB');
-          toast({
-            title: "Erreur de base de données",
-            description: "Impossible d'initialiser le stockage local",
-            variant: "destructive",
-          });
+          console.warn('IndexedDB failed to open, switching to fallback storage');
+          setUseFallback(true);
+          setIsInitialized(true);
         };
 
         request.onsuccess = () => {
+          console.log('IndexedDB initialized successfully');
           setDb(request.result);
           setIsInitialized(true);
         };
@@ -63,21 +76,37 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
             }
           });
         };
+
+        // Set a timeout to fallback if IndexedDB takes too long
+        setTimeout(() => {
+          if (!isInitialized) {
+            console.warn('IndexedDB initialization timeout, using fallback');
+            setUseFallback(true);
+            setIsInitialized(true);
+          }
+        }, 3000);
+
       } catch (error) {
         console.error('Error initializing IndexedDB:', error);
+        setUseFallback(true);
+        setIsInitialized(true);
       }
     };
 
     initDB();
-  }, [config]);
+  }, [config, isInitialized]);
 
   // Calculate checksum for data integrity
   const calculateChecksum = useCallback((data: any): string => {
     return btoa(JSON.stringify(data)).slice(0, 16);
   }, []);
 
-  // Save data to IndexedDB
+  // Save data with fallback support
   const saveData = useCallback(async (storeName: string, key: string, data: any): Promise<boolean> => {
+    if (useFallback) {
+      return fallbackStorage.saveData(storeName, key, data);
+    }
+
     if (!db || !isInitialized) return false;
 
     setIsLoading(true);
@@ -101,19 +130,19 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       return true;
     } catch (error) {
       console.error('Error saving to IndexedDB:', error);
-      toast({
-        title: "Erreur de sauvegarde",
-        description: "Impossible de sauvegarder les données",
-        variant: "destructive",
-      });
-      return false;
+      // Try fallback if IndexedDB fails
+      return fallbackStorage.saveData(storeName, key, data);
     } finally {
       setIsLoading(false);
     }
-  }, [db, isInitialized, calculateChecksum, toast]);
+  }, [db, isInitialized, useFallback, calculateChecksum, fallbackStorage]);
 
-  // Load data from IndexedDB
+  // Load data with fallback support
   const loadData = useCallback(async (storeName: string, key: string): Promise<any | null> => {
+    if (useFallback) {
+      return fallbackStorage.loadData(storeName, key);
+    }
+
     if (!db || !isInitialized) return null;
 
     setIsLoading(true);
@@ -133,25 +162,25 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       const calculatedChecksum = calculateChecksum(storedData.data);
       if (storedData.checksum && storedData.checksum !== calculatedChecksum) {
         console.warn('Data checksum mismatch, data may be corrupted');
-        toast({
-          title: "Données corrompues",
-          description: "Les données semblent avoir été altérées",
-          variant: "destructive",
-        });
         return null;
       }
 
       return storedData.data;
     } catch (error) {
       console.error('Error loading from IndexedDB:', error);
-      return null;
+      // Try fallback if IndexedDB fails
+      return fallbackStorage.loadData(storeName, key);
     } finally {
       setIsLoading(false);
     }
-  }, [db, isInitialized, calculateChecksum, toast]);
+  }, [db, isInitialized, useFallback, calculateChecksum, fallbackStorage]);
 
-  // Delete data from IndexedDB
+  // Delete data with fallback support
   const deleteData = useCallback(async (storeName: string, key: string): Promise<boolean> => {
+    if (useFallback) {
+      return fallbackStorage.deleteData(storeName, key);
+    }
+
     if (!db || !isInitialized) return false;
 
     try {
@@ -167,12 +196,16 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       return true;
     } catch (error) {
       console.error('Error deleting from IndexedDB:', error);
-      return false;
+      return fallbackStorage.deleteData(storeName, key);
     }
-  }, [db, isInitialized]);
+  }, [db, isInitialized, useFallback, fallbackStorage]);
 
-  // Get all keys from a store
+  // Get all keys with fallback support
   const getAllKeys = useCallback(async (storeName: string): Promise<string[]> => {
+    if (useFallback) {
+      return fallbackStorage.getAllKeys(storeName);
+    }
+
     if (!db || !isInitialized) return [];
 
     try {
@@ -186,12 +219,16 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       });
     } catch (error) {
       console.error('Error getting keys from IndexedDB:', error);
-      return [];
+      return fallbackStorage.getAllKeys(storeName);
     }
-  }, [db, isInitialized]);
+  }, [db, isInitialized, useFallback, fallbackStorage]);
 
-  // Export all data from IndexedDB
+  // Export all data with fallback support
   const exportAllData = useCallback(async (): Promise<any> => {
+    if (useFallback) {
+      return fallbackStorage.exportAllData();
+    }
+
     if (!db || !isInitialized) return {};
 
     const exportData: any = {};
@@ -224,10 +261,14 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       version: config.version,
       data: exportData
     };
-  }, [db, isInitialized, config]);
+  }, [db, isInitialized, config, useFallback, fallbackStorage]);
 
-  // Clear all data from IndexedDB
+  // Clear all data with fallback support
   const clearAllData = useCallback(async (): Promise<boolean> => {
+    if (useFallback) {
+      return fallbackStorage.clearAllData();
+    }
+
     if (!db || !isInitialized) return false;
 
     try {
@@ -250,14 +291,9 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       return true;
     } catch (error) {
       console.error('Error clearing IndexedDB:', error);
-      toast({
-        title: "Erreur de suppression",
-        description: "Impossible de supprimer toutes les données",
-        variant: "destructive",
-      });
-      return false;
+      return fallbackStorage.clearAllData();
     }
-  }, [db, isInitialized, config.stores, toast]);
+  }, [db, isInitialized, config.stores, toast, useFallback, fallbackStorage]);
 
   // Get storage usage information
   const getStorageInfo = useCallback(async () => {
@@ -270,23 +306,25 @@ export const useIndexedDBManager = (config: IndexedDBConfig) => {
       return {
         quota: estimate.quota,
         usage: estimate.usage,
-        available: estimate.quota ? estimate.quota - (estimate.usage || 0) : 0
+        available: estimate.quota ? estimate.quota - (estimate.usage || 0) : 0,
+        usingFallback: useFallback
       };
     } catch (error) {
       console.error('Error getting storage info:', error);
       return null;
     }
-  }, []);
+  }, [useFallback]);
 
   return {
     isInitialized,
-    isLoading,
+    isLoading: isLoading || fallbackStorage.isLoading,
     saveData,
     loadData,
     deleteData,
     getAllKeys,
     exportAllData,
     clearAllData,
-    getStorageInfo
+    getStorageInfo,
+    usingFallback: useFallback
   };
 };

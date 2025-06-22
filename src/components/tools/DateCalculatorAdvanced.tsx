@@ -8,8 +8,8 @@ import { ToolContainer } from "@/components/ui/tool-container";
 import { ToolTabSystem } from "@/components/ui/tool-tab-system";
 import { useDateCalculations } from "./dateCalculator/hooks/useDateCalculations";
 import { DateDifferenceTab } from "./dateCalculator/components/DateDifferenceTab";
-import { DateCalculationTab } from "./dateCalculator/components/DateCalculationTab";
-import { AgeCalculatorTab } from "./dateCalculator/components/AgeCalculatorTab";
+import { DateCalculationTabEnhanced } from "./dateCalculator/components/DateCalculationTabEnhanced";
+import { AgeCalculatorTabEnhanced } from "./dateCalculator/components/AgeCalculatorTabEnhanced";
 import { EventPlannerTabEnhanced } from "./dateCalculator/components/EventPlannerTabEnhanced";
 import { TimeZoneTab } from "./dateCalculator/components/TimeZoneTab";
 
@@ -63,7 +63,7 @@ export const DateCalculatorAdvanced = () => {
       icon: <Calculator className="w-4 h-4" />,
       badge: "±",
       content: (
-        <DateCalculationTab
+        <DateCalculationTabEnhanced
           baseDate={baseDate}
           setBaseDate={setBaseDate}
           operation={operation}
@@ -82,7 +82,7 @@ export const DateCalculatorAdvanced = () => {
       icon: <Clock className="w-4 h-4" />,
       badge: "Détaillé",
       content: (
-        <AgeCalculatorTab
+        <AgeCalculatorTabEnhanced
           birthDate={birthDate}
           setBirthDate={setBirthDate}
           calculateAge={() => calculateAge(birthDate)}
@@ -107,9 +107,9 @@ export const DateCalculatorAdvanced = () => {
 
   const headerBadges = [
     "Calculs précis",
-    "Fuseaux horaires", 
+    "Date sans horaire", 
     "Planning avancé",
-    "Sync hors ligne"
+    "Interface optimisée"
   ];
 
   return (
@@ -118,7 +118,7 @@ export const DateCalculatorAdvanced = () => {
         <ToolHeader
           title="Suite Avancée Dates & Temps"
           subtitle={`${format(currentTime, "HH:mm:ss", { locale: fr })} - ${format(currentTime, "EEEE dd MMMM yyyy", { locale: fr })}`}
-          description="Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore avec notre suite d'outils professionnels. Données synchronisées hors ligne avec import/export."
+          description="Calculez des différences temporelles, planifiez vos événements, gérez les fuseaux horaires et bien plus encore avec notre suite d'outils professionnels. Interface optimisée avec option date seule ou date+heure."
           icon={<Clock className="w-8 h-8" />}
           badges={headerBadges}
           gradient="purple"

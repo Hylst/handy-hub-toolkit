@@ -57,6 +57,90 @@ export type Database = {
         }
         Relationships: []
       }
+      user_app_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_sync: string | null
+          offline_mode: boolean | null
+          sync_enabled: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_sync?: string | null
+          offline_mode?: boolean | null
+          sync_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_sync?: string | null
+          offline_mode?: boolean | null
+          sync_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          created_at: string | null
+          date: string
+          description: string | null
+          event_id: string
+          id: string
+          is_recurring: boolean | null
+          location: string | null
+          name: string
+          priority: string
+          recurring_type: string | null
+          tags: string[] | null
+          time: string | null
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          description?: string | null
+          event_id: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          name: string
+          priority?: string
+          recurring_type?: string | null
+          tags?: string[] | null
+          time?: string | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          name?: string
+          priority?: string
+          recurring_type?: string | null
+          tags?: string[] | null
+          time?: string | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_offline_data: {
         Row: {
           created_at: string | null

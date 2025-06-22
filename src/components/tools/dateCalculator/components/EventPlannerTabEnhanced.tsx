@@ -1,45 +1,41 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { History, Plus, Search, Filter, Edit, Trash2, CalendarDays, Clock, MapPin, Copy } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+import { Calendar, Clock, Plus, Settings, Download, Upload, Trash2, Edit, Wifi, WifiOff, RotateCcw } from 'lucide-react';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
-import { useEventPlannerEnhanced, Event } from '../hooks/useEventPlannerEnhanced';
-import { DataImportExport } from '../../common/DataImportExport';
+import { useEventPlannerSupabase, Event } from '../hooks/useEventPlannerSupabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const EventPlannerTabEnhanced = () => {
-  const { toast } = useToast();
+  const { user } = useAuth();
   const {
     events,
     categories,
     stats,
+    userSettings,
+    isLoading,
+    isSyncing,
+    lastSyncTime,
     addEvent,
     updateEvent,
     deleteEvent,
-    addCategory,
-    isLoading,
-    isOnline,
-    isSyncing,
-    lastSyncTime,
+    toggleOfflineMode,
+    syncWithSupabase,
     exportData,
-    importData,
-    resetData
-  } = useEventPlannerEnhanced();
+    importData
+  } = useEventPlannerSupabase();
 
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
-
-  const [newEvent, setNewEvent] = useState({
+  const [formData, setFormData] = useState({
     name: '',
     date: '',
     time: '',
@@ -47,127 +43,29 @@ export const EventPlannerTabEnhanced = () => {
     priority: 'medium' as Event['priority'],
     description: '',
     location: '',
-    tags: ''
+    tags: [] as string[],
+    isRecurring: false,
+    recurringType: undefined as Event['recurringType']
   });
 
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.location?.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const matchesType = filterType === 'all' || event.type === filterType;
-    const matchesPriority = filterPriority === 'all' || event.priority === filterPriority;
+    if (!formData.name || !formData.date) return;
 
-    return matchesSearch && matchesType && matchesPriority;
-  });
+    const eventData = {
+      ...formData,
+      tags: formData.tags || []
+    };
 
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case 'meeting': return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case 'deadline': return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      case 'reminder': return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case 'birthday': return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
-      case 'anniversary': return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-      default: return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    if (editingEvent) {
+      await updateEvent(editingEvent.id, eventData);
+      setEditingEvent(null);
+    } else {
+      await addEvent(eventData);
     }
-  };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return "border-l-4 border-red-500";
-      case 'medium': return "border-l-4 border-yellow-500";
-      default: return "border-l-4 border-green-500";
-    }
-  };
-
-  const getEventTypeIcon = (type: string) => {
-    switch (type) {
-      case 'meeting': return "👥";
-      case 'deadline': return "⏰";
-      case 'reminder': return "🔔";
-      case 'birthday': return "🎂";
-      case 'anniversary': return "💝";
-      default: return "📅";
-    }
-  };
-
-  const getDaysUntilEvent = (eventDate: string) => {
-    const today = new Date();
-    const event = new Date(eventDate);
-    const days = differenceInDays(event, today);
-    
-    if (days === 0) return "Aujourd'hui";
-    if (days === 1) return "Demain";
-    if (days < 0) return `Il y a ${Math.abs(days)} jour(s)`;
-    return `Dans ${days} jour(s)`;
-  };
-
-  const handleAddEvent = async () => {
-    if (!newEvent.name || !newEvent.date) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir au minimum le nom et la date de l'événement.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    await addEvent({
-      name: newEvent.name,
-      date: newEvent.date,
-      time: newEvent.time,
-      type: newEvent.type,
-      priority: newEvent.priority,
-      description: newEvent.description,
-      location: newEvent.location,
-      tags: newEvent.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-    });
-    
-    resetForm();
-    toast({
-      title: "Événement ajouté",
-      description: `${newEvent.name} a été ajouté à votre planning.`,
-    });
-  };
-
-  const handleUpdateEvent = async () => {
-    if (!editingEvent || !newEvent.name || !newEvent.date) return;
-
-    await updateEvent(editingEvent.id, {
-      name: newEvent.name,
-      date: newEvent.date,
-      time: newEvent.time,
-      type: newEvent.type,
-      priority: newEvent.priority,
-      description: newEvent.description,
-      location: newEvent.location,
-      tags: newEvent.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-    });
-
-    resetForm();
-    toast({
-      title: "Événement modifié",
-      description: "L'événement a été mis à jour avec succès.",
-    });
-  };
-
-  const startEdit = (event: Event) => {
-    setEditingEvent(event);
-    setNewEvent({
-      name: event.name,
-      date: event.date,
-      time: event.time || '',
-      type: event.type,
-      priority: event.priority,
-      description: event.description || '',
-      location: event.location || '',
-      tags: event.tags.join(', ')
-    });
-    setShowAddForm(true);
-  };
-
-  const resetForm = () => {
-    setNewEvent({
+    setFormData({
       name: '',
       date: '',
       time: '',
@@ -175,336 +73,402 @@ export const EventPlannerTabEnhanced = () => {
       priority: 'medium',
       description: '',
       location: '',
-      tags: ''
+      tags: [],
+      isRecurring: false,
+      recurringType: undefined
     });
-    setEditingEvent(null);
-    setShowAddForm(false);
+    setShowForm(false);
   };
 
-  const handleDeleteEvent = async (id: string) => {
-    await deleteEvent(id);
-    toast({
-      title: "Événement supprimé",
-      description: "L'événement a été retiré de votre planning.",
+  const handleEdit = (event: Event) => {
+    setEditingEvent(event);
+    setFormData({
+      name: event.name,
+      date: event.date,
+      time: event.time || '',
+      type: event.type,
+      priority: event.priority,
+      description: event.description || '',
+      location: event.location || '',
+      tags: event.tags,
+      isRecurring: event.isRecurring || false,
+      recurringType: event.recurringType
     });
+    setShowForm(true);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copié !",
-      description: "Le résultat a été copié dans le presse-papiers.",
-    });
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      importData(file);
+      e.target.value = '';
+    }
+  };
+
+  const getEventTypeColor = (type: Event['type']) => {
+    const colors = {
+      event: 'bg-blue-100 text-blue-800',
+      meeting: 'bg-green-100 text-green-800',
+      deadline: 'bg-red-100 text-red-800',
+      reminder: 'bg-yellow-100 text-yellow-800',
+      birthday: 'bg-pink-100 text-pink-800',
+      anniversary: 'bg-purple-100 text-purple-800'
+    };
+    return colors[type] || colors.event;
+  };
+
+  const getPriorityColor = (priority: Event['priority']) => {
+    const colors = {
+      low: 'bg-gray-100 text-gray-800',
+      medium: 'bg-orange-100 text-orange-800',
+      high: 'bg-red-100 text-red-800'
+    };
+    return colors[priority];
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-500">Chargement des événements...</p>
-        </div>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 animate-spin" />
+              <span>Chargement des événements...</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <Card className="shadow-lg border-2">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-purple-950/50">
-          <CardTitle className="flex items-center gap-3 text-lg lg:text-xl">
-            <History className="w-5 h-5 lg:w-6 lg:h-6 text-indigo-600" />
-            Planificateur d'Événements Avancé
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
-          {/* Statistiques */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            <div className="p-3 lg:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-              <h3 className="font-semibold text-blue-700 dark:text-blue-300 text-sm lg:text-base">Total</h3>
-              <p className="text-xl lg:text-2xl font-bold text-blue-600">{stats.totalEvents}</p>
-            </div>
-            <div className="p-3 lg:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-              <h3 className="font-semibold text-green-700 dark:text-green-300 text-sm lg:text-base">À venir</h3>
-              <p className="text-xl lg:text-2xl font-bold text-green-600">{stats.upcomingEvents}</p>
-            </div>
-            <div className="p-3 lg:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
-              <h3 className="font-semibold text-orange-700 dark:text-orange-300 text-sm lg:text-base">Aujourd'hui</h3>
-              <p className="text-xl lg:text-2xl font-bold text-orange-600">{stats.todayEvents}</p>
-            </div>
-            <div className="p-3 lg:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
-              <h3 className="font-semibold text-red-700 dark:text-red-300 text-sm lg:text-base">En retard</h3>
-              <p className="text-xl lg:text-2xl font-bold text-red-600">{stats.overdueEvents}</p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Recherche et filtres */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-              <Input
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Type d'événement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="event">📅 Événement</SelectItem>
-                <SelectItem value="meeting">👥 Réunion</SelectItem>
-                <SelectItem value="deadline">⏰ Échéance</SelectItem>
-                <SelectItem value="reminder">🔔 Rappel</SelectItem>
-                <SelectItem value="birthday">🎂 Anniversaire</SelectItem>
-                <SelectItem value="anniversary">💝 Anniversaire</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterPriority} onValueChange={setFilterPriority}>
-              <SelectTrigger>
-                <SelectValue placeholder="Priorité" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes priorités</SelectItem>
-                <SelectItem value="high">🔴 Haute</SelectItem>
-                <SelectItem value="medium">🟡 Moyenne</SelectItem>
-                <SelectItem value="low">🟢 Basse</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Bouton d'ajout */}
-          <Button 
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              if (showAddForm) resetForm();
-            }}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {showAddForm ? 'Annuler' : 'Nouvel événement'}
-          </Button>
-
-          {/* Formulaire d'ajout/édition */}
-          {showAddForm && (
-            <Card className="border-2 border-indigo-200 dark:border-indigo-800">
-              <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Input
-                    placeholder="Nom de l'événement *"
-                    value={newEvent.name}
-                    onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
-                    className="sm:col-span-2 lg:col-span-1"
-                  />
-                  <Input
-                    type="date"
-                    value={newEvent.date}
-                    onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                  />
-                  <Input
-                    type="time"
-                    value={newEvent.time}
-                    onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                  />
-                  <Select value={newEvent.type} onValueChange={(value: any) => setNewEvent({...newEvent, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="event">📅 Événement</SelectItem>
-                      <SelectItem value="meeting">👥 Réunion</SelectItem>
-                      <SelectItem value="deadline">⏰ Échéance</SelectItem>
-                      <SelectItem value="reminder">🔔 Rappel</SelectItem>
-                      <SelectItem value="birthday">🎂 Anniversaire</SelectItem>
-                      <SelectItem value="anniversary">💝 Anniversaire</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={newEvent.priority} onValueChange={(value: any) => setNewEvent({...newEvent, priority: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">🟢 Priorité basse</SelectItem>
-                      <SelectItem value="medium">🟡 Priorité moyenne</SelectItem>
-                      <SelectItem value="high">🔴 Priorité haute</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Lieu (optionnel)"
-                    value={newEvent.location}
-                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                  />
-                </div>
-                <Input
-                  placeholder="Tags (séparés par des virgules)"
-                  value={newEvent.tags}
-                  onChange={(e) => setNewEvent({...newEvent, tags: e.target.value})}
-                />
-                <Textarea
-                  placeholder="Description (optionnel)"
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                />
-                <Button 
-                  onClick={editingEvent ? handleUpdateEvent : handleAddEvent}
-                  disabled={!newEvent.name || !newEvent.date}
-                  className="w-full"
-                >
-                  {editingEvent ? 'Mettre à jour' : 'Ajouter'} l'événement
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          <Separator />
-
-          {/* Liste des événements */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h3 className="font-bold text-lg lg:text-xl">
-                Événements ({filteredEvents.length})
-              </h3>
-              {filteredEvents.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const eventsList = filteredEvents.map(e => 
-                      `${e.name} - ${format(new Date(e.date), "dd/MM/yyyy", { locale: fr })}${e.time ? ` à ${e.time}` : ""}`
-                    ).join('\n');
-                    copyToClipboard(eventsList);
-                  }}
-                  className="self-start"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copier la liste
-                </Button>
-              )}
-            </div>
-            
-            {filteredEvents.length === 0 ? (
-              <div className="text-center py-8 lg:py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <CalendarDays className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-base lg:text-lg text-gray-600 dark:text-gray-400 mb-2">
-                  {searchTerm || filterType !== 'all' || filterPriority !== 'all'
-                    ? 'Aucun événement ne correspond aux filtres'
-                    : 'Aucun événement planifié'
-                  }
-                </p>
-                <p className="text-sm text-gray-500">
-                  {searchTerm || filterType !== 'all' || filterPriority !== 'all'
-                    ? 'Modifiez vos critères de recherche'
-                    : 'Commencez par ajouter votre premier événement'
-                  }
-                </p>
+    <div className="space-y-6">
+      {/* En-tête avec statistiques et contrôles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total</p>
+                <p className="text-2xl font-bold">{stats.totalEvents}</p>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredEvents.map((event) => (
-                  <div 
-                    key={event.id} 
-                    className={`p-4 bg-white dark:bg-gray-800 rounded-xl border-2 shadow-sm hover:shadow-md transition-shadow ${getPriorityColor(event.priority)}`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="text-xl lg:text-2xl">{getEventTypeIcon(event.type)}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:gap-3 mb-2">
-                            <h4 className="font-semibold text-base lg:text-lg truncate">{event.name}</h4>
-                            <div className="flex flex-wrap gap-2">
-                              <Badge className={getEventTypeColor(event.type)}>
-                                {event.type}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {getDaysUntilEvent(event.date)}
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                              <div className="flex items-center gap-2">
-                                <CalendarDays className="w-4 h-4" />
-                                <span className="break-words">
-                                  {format(new Date(event.date), "EEEE dd MMMM yyyy", { locale: fr })}
-                                </span>
-                              </div>
-                              {event.time && (
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4" />
-                                  {event.time}
-                                </div>
-                              )}
-                            </div>
-                            
-                            {event.location && (
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4" />
-                                <span className="break-words">{event.location}</span>
-                              </div>
-                            )}
-                            
-                            {event.description && (
-                              <p className="mt-2 text-gray-700 dark:text-gray-300 break-words">
-                                {event.description}
-                              </p>
-                            )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">À venir</p>
+                <p className="text-2xl font-bold">{stats.upcomingEvents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600">Aujourd'hui</p>
+                <p className="text-2xl font-bold">{stats.todayEvents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-red-600" />
+              <div>
+                <p className="text-sm text-gray-600">En retard</p>
+                <p className="text-2xl font-bold">{stats.overdueEvents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                            {event.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {event.tags.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 self-start lg:self-auto">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEdit(event)}
-                          className="text-gray-500 hover:text-blue-600"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteEvent(event.id)}
-                          className="text-gray-500 hover:text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      {/* Paramètres et contrôles */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Paramètres et Contrôles
+            </div>
+            {user && (
+              <div className="flex items-center gap-2">
+                {userSettings.offlineMode ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                <span className="text-xs">{userSettings.offlineMode ? 'Hors ligne' : 'En ligne'}</span>
               </div>
             )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowForm(true)} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              Nouvel événement
+            </Button>
+            
+            <Button onClick={exportData} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-1" />
+              Exporter
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={() => document.getElementById('file-import')?.click()}>
+              <Upload className="w-4 h-4 mr-1" />
+              Importer
+            </Button>
+            <input
+              id="file-import"
+              type="file"
+              accept=".json"
+              onChange={handleFileImport}
+              className="hidden"
+            />
+
+            {user && !userSettings.offlineMode && (
+              <Button 
+                onClick={syncWithSupabase} 
+                variant="outline" 
+                size="sm"
+                disabled={isSyncing}
+              >
+                <RotateCcw className={`w-4 h-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                Synchroniser
+              </Button>
+            )}
           </div>
+
+          {user && (
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="offline-mode" className="text-sm">Mode hors ligne</Label>
+                <Switch
+                  id="offline-mode"
+                  checked={userSettings.offlineMode}
+                  onCheckedChange={toggleOfflineMode}
+                />
+              </div>
+              {lastSyncTime && (
+                <span className="text-xs text-gray-500">
+                  Dernière sync: {format(new Date(lastSyncTime), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                </span>
+              )}
+            </div>
+          )}
+
+          {!user && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                Connectez-vous pour synchroniser vos événements avec le cloud et accéder aux fonctionnalités avancées.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Import/Export */}
-      <DataImportExport
-        onExport={exportData}
-        onImport={importData}
-        onReset={resetData}
-        isOnline={isOnline}
-        isSyncing={isSyncing}
-        lastSyncTime={lastSyncTime}
-        toolName="Événements"
-      />
+      {/* Formulaire d'ajout/modification */}
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              {editingEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Nom de l'événement *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Nom de l'événement"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="date">Date *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="time">Heure</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={formData.type} onValueChange={(value: Event['type']) => setFormData(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="event">Événement</SelectItem>
+                      <SelectItem value="meeting">Réunion</SelectItem>
+                      <SelectItem value="deadline">Échéance</SelectItem>
+                      <SelectItem value="reminder">Rappel</SelectItem>
+                      <SelectItem value="birthday">Anniversaire</SelectItem>
+                      <SelectItem value="anniversary">Anniversaire de mariage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="priority">Priorité</Label>
+                  <Select value={formData.priority} onValueChange={(value: Event['priority']) => setFormData(prev => ({ ...prev, priority: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Faible</SelectItem>
+                      <SelectItem value="medium">Moyenne</SelectItem>
+                      <SelectItem value="high">Élevée</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="location">Lieu</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="Lieu de l'événement"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Description de l'événement"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="submit">
+                  {editingEvent ? 'Modifier' : 'Ajouter'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowForm(false);
+                  setEditingEvent(null);
+                  setFormData({
+                    name: '',
+                    date: '',
+                    time: '',
+                    type: 'event',
+                    priority: 'medium',
+                    description: '',
+                    location: '',
+                    tags: [],
+                    isRecurring: false,
+                    recurringType: undefined
+                  });
+                }}>
+                  Annuler
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Liste des événements */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Événements à venir</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucun événement planifié</p>
+              <p className="text-sm">Cliquez sur "Nouvel événement" pour commencer</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {events.map(event => (
+                <div key={event.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium">{event.name}</h3>
+                        <Badge className={getEventTypeColor(event.type)}>
+                          {event.type}
+                        </Badge>
+                        <Badge className={getPriorityColor(event.priority)}>
+                          {event.priority}
+                        </Badge>
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>
+                            {format(new Date(event.date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                            {event.time && ` à ${event.time}`}
+                          </span>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-2">
+                            <span>📍 {event.location}</span>
+                          </div>
+                        )}
+                        {event.description && (
+                          <p className="text-gray-700 mt-2">{event.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-1 ml-4">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEdit(event)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => deleteEvent(event.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

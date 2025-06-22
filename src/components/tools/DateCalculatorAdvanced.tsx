@@ -129,7 +129,8 @@ export const DateCalculatorAdvanced = () => {
     "Calculs multi-opérations",
     "Historique complet", 
     "Export/Import",
-    "Stockage sécurisé"
+    "Synchronisation cloud",
+    "Mode offline/online"
   ];
 
   return (
@@ -138,7 +139,7 @@ export const DateCalculatorAdvanced = () => {
         <ToolHeader
           title="Suite Avancée Dates & Temps Pro"
           subtitle={`${format(currentTime, "HH:mm:ss", { locale: fr })} - ${format(currentTime, "EEEE dd MMMM yyyy", { locale: fr })}`}
-          description="Calculez des différences temporelles, effectuez des opérations multiples, gérez votre historique complet et planifiez vos événements avec notre suite d'outils professionnels améliorée."
+          description="Calculez des différences temporelles, effectuez des opérations multiples, gérez votre historique complet et planifiez vos événements avec synchronisation cloud et mode offline."
           icon={<Clock className="w-8 h-8" />}
           badges={headerBadges}
           gradient="purple"

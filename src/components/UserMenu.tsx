@@ -16,9 +16,10 @@ import { toast } from '@/hooks/use-toast';
 
 interface UserMenuProps {
   onProfileClick?: () => void;
+  onSettingsClick?: () => void;
 }
 
-export const UserMenu = ({ onProfileClick }: UserMenuProps) => {
+export const UserMenu = ({ onProfileClick, onSettingsClick }: UserMenuProps) => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -32,6 +33,12 @@ export const UserMenu = ({ onProfileClick }: UserMenuProps) => {
   const handleProfileClick = () => {
     if (onProfileClick) {
       onProfileClick();
+    }
+  };
+
+  const handleSettingsClick = () => {
+    if (onSettingsClick) {
+      onSettingsClick();
     }
   };
 
@@ -71,7 +78,7 @@ export const UserMenu = ({ onProfileClick }: UserMenuProps) => {
           <User className="mr-2 h-4 w-4" />
           <span>Profil</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSettingsClick}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Paramètres</span>
         </DropdownMenuItem>

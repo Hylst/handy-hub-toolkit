@@ -13,14 +13,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface UserMenuProps {
   onProfileClick?: () => void;
-  onSettingsClick?: () => void;
 }
 
-export const UserMenu = ({ onProfileClick, onSettingsClick }: UserMenuProps) => {
+export const UserMenu = ({ onProfileClick }: UserMenuProps) => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
@@ -37,9 +38,7 @@ export const UserMenu = ({ onProfileClick, onSettingsClick }: UserMenuProps) => 
   };
 
   const handleSettingsClick = () => {
-    if (onSettingsClick) {
-      onSettingsClick();
-    }
+    navigate('/settings');
   };
 
   if (!user) return null;

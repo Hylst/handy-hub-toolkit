@@ -1,15 +1,11 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Download, 
-  RotateCcw, 
-  HardDrive,
-  AlertTriangle
-} from 'lucide-react';
-import { 
+import { Download, Upload, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,31 +18,38 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface DataActionsProps {
-  isLoading: boolean;
-  isResetting: boolean;
-  onExport: () => Promise<void>;
-  onImport: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
-  onReset: () => Promise<void>;
+  isLoading?: boolean;
+  isResetting?: boolean;
+  onExport: () => void;
+  onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onReset: () => void;
 }
 
 export const DataActions = ({
-  isLoading,
-  isResetting,
+  isLoading = false,
+  isResetting = false,
   onExport,
   onImport,
   onReset
 }: DataActionsProps) => {
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  const handleResetConfirm = () => {
+    onReset();
+    setShowResetDialog(false);
+  };
+
   return (
-    <Card>
+    <Card className="border-2 border-orange-200 dark:border-orange-800">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <HardDrive className="w-4 h-4" />
-          Gestion des Données
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Download className="w-5 h-5 text-orange-600" />
+          Actions sur les Données
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Export/Import */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Export */}
           <div className="space-y-2">
             <Button
               onClick={onExport}
@@ -54,15 +57,18 @@ export const DataActions = ({
               className="w-full"
               variant="outline"
             >
-              <Download className="w-4 h-4 mr-2" />
-              {isLoading ? 'Export en cours...' : 'Exporter Tout'}
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Exporter toutes les données
             </Button>
             <p className="text-xs text-gray-500 text-center">
-              Sauvegarde complète de l'application
+              Télécharger un fichier JSON avec toutes vos données
             </p>
           </div>
 
-          {/* Import */}
           <div className="space-y-2">
             <div>
               <Input
@@ -70,18 +76,21 @@ export const DataActions = ({
                 accept=".json"
                 onChange={onImport}
                 disabled={isLoading || isResetting}
-                className="w-full"
+                className="hidden"
                 id="universal-import"
               />
-              <label
-                htmlFor="universal-import"
-                className="sr-only"
+              <Button
+                onClick={() => document.getElementById('universal-import')?.click()}
+                disabled={isLoading || isResetting}
+                className="w-full"
+                variant="outline"
               >
-                Importer un fichier de sauvegarde
-              </label>
+                <Upload className="w-4 h-4 mr-2" />
+                Importer des données
+              </Button>
             </div>
             <p className="text-xs text-gray-500 text-center">
-              Restaurer depuis une sauvegarde
+              Restaurer à partir d'un fichier JSON
             </p>
           </div>
         </div>
@@ -89,16 +98,19 @@ export const DataActions = ({
         <Separator />
 
         {/* Reset avec confirmation */}
-        <div className="text-center">
-          <AlertDialog>
+        <div className="text-center space-y-3">
+          <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
             <AlertDialogTrigger asChild>
               <Button
                 variant="destructive"
-                size="sm"
                 disabled={isLoading || isResetting}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                {isResetting ? 'Suppression...' : 'Tout Réinitialiser'}
+                {isResetting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                )}
+                Réinitialiser toutes les données
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -108,23 +120,16 @@ export const DataActions = ({
                   Confirmer la réinitialisation
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action va supprimer définitivement TOUTES les données de l'application :
-                  <br />
-                  • Tous vos projets et tâches
-                  <br />
-                  • Tous vos objectifs et notes
-                  <br />
-                  • Tout l'historique des outils
-                  <br />
-                  • Toutes vos préférences
+                  Cette action va supprimer définitivement toutes les données stockées localement 
+                  pour tous les outils. Cette action est irréversible.
                   <br /><br />
-                  Cette action est irréversible. Voulez-vous continuer ?
+                  Êtes-vous sûr de vouloir continuer ?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Annuler</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={onReset}
+                  onClick={handleResetConfirm}
                   className="bg-red-600 hover:bg-red-700"
                 >
                   Oui, tout supprimer
@@ -132,8 +137,9 @@ export const DataActions = ({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <p className="text-xs text-red-500 mt-2">
-            ⚠️ Supprime définitivement toutes les données
+          
+          <p className="text-xs text-red-500">
+            ⚠️ Action irréversible - Exportez vos données avant de réinitialiser
           </p>
         </div>
       </CardContent>

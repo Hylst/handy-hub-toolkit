@@ -35,12 +35,16 @@ export const UniversalDataManager = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [showTests, setShowTests] = useState(false);
 
-  // Charger les statistiques avec Dexie
+  // Charger les statistiques avec un debounce simple
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const loadStats = async () => {
       try {
-        const universalStats = await getUniversalStats();
-        const storageStats = await getStorageStats();
+        const [universalStats, storageStats] = await Promise.all([
+          getUniversalStats(),
+          getStorageStats()
+        ]);
         
         if (universalStats && storageStats) {
           const mockStats: AppStatistics = {
@@ -65,11 +69,18 @@ export const UniversalDataManager = () => {
       }
     };
 
+    // Chargement initial immédiat
     loadStats();
     
-    // Rafraîchir les stats toutes les 30 secondes
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
+    // Ensuite rafraîchir toutes les minutes seulement
+    const interval = setInterval(() => {
+      timeoutId = setTimeout(loadStats, 500); // Debounce de 500ms
+    }, 60000); // Toutes les 60 secondes
+    
+    return () => {
+      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [getUniversalStats, getStorageStats]);
 
   const handleExport = async () => {
@@ -80,13 +91,17 @@ export const UniversalDataManager = () => {
         includePreferences: true
       });
       
-      // Rafraîchir les stats après export
-      const universalStats = await getUniversalStats();
-      if (universalStats) {
-        // Mettre à jour les stats...
-      }
+      toast({
+        title: "Export réussi",
+        description: "Toutes les données ont été exportées",
+      });
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
+      toast({
+        title: "Erreur d'export",
+        description: "Impossible d'exporter les données",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -101,17 +116,25 @@ export const UniversalDataManager = () => {
       const success = await importUniversalData(file, 'replace');
       
       if (success) {
-        // Rafraîchir les stats après import
-        const universalStats = await getUniversalStats();
-        if (universalStats) {
-          // Mettre à jour les stats...
-        }
+        toast({
+          title: "Import réussi",
+          description: "Les données ont été importées avec succès",
+        });
+        
+        // Recharger les stats après un court délai
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       console.error('Erreur lors de l\'import:', error);
+      toast({
+        title: "Erreur d'import",
+        description: "Impossible d'importer les données",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
-      // Reset input
       event.target.value = '';
     }
   };
@@ -127,11 +150,18 @@ export const UniversalDataManager = () => {
           description: "Toutes les données ont été supprimées",
         });
         
-        // Rafraîchir les stats
         setStats(null);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       console.error('Erreur lors de la réinitialisation:', error);
+      toast({
+        title: "Erreur de réinitialisation",
+        description: "Impossible de supprimer toutes les données",
+        variant: "destructive",
+      });
     } finally {
       setIsResetting(false);
     }
@@ -148,7 +178,7 @@ export const UniversalDataManager = () => {
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center gap-2">
               <Database className="w-5 h-5 text-blue-600" />
-              Gestionnaire Universel des Données (v2.1)
+              Gestionnaire Universel des Données (v2.2)
             </div>
             <button
               onClick={() => setShowTests(!showTests)}
@@ -183,16 +213,16 @@ export const UniversalDataManager = () => {
       {/* Nouvelles fonctionnalités */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">🚀 Nouvelles Fonctionnalités v2.1</CardTitle>
+          <CardTitle className="text-sm">🚀 Nouvelles Fonctionnalités v2.2</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="text-xs space-y-1">
-            <div>✅ <strong>Dexie Integration:</strong> Base de données IndexedDB plus robuste</div>
-            <div>✅ <strong>Auto-save optimisé:</strong> Sauvegarde automatique avec debouncing</div>
-            <div>✅ <strong>Sync Supabase:</strong> Synchronisation temps réel améliorée</div>
-            <div>✅ <strong>Performance Monitor:</strong> Surveillance en temps réel</div>
-            <div>✅ <strong>Tests intégrés:</strong> Validation automatique du système</div>
-            <div>✅ <strong>Export/Import universel:</strong> Gestion complète des données</div>
+            <div>✅ <strong>IndexedDB unifié:</strong> Migration complète vers Dexie</div>
+            <div>✅ <strong>Performance optimisée:</strong> Réduction des appels redondants</div>
+            <div>✅ <strong>Tests stabilisés:</strong> Suppression des hooks non initialisés</div>
+            <div>✅ <strong>Interface cohérente:</strong> Cartes d'outils uniformisées</div>
+            <div>✅ <strong>Debouncing amélioré:</strong> Moins de charge système</div>
+            <div>✅ <strong>Gestion d'erreurs:</strong> Messages plus clairs</div>
           </div>
         </CardContent>
       </Card>

@@ -21,8 +21,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Database } from "lucide-react";
 
 // New design system components
 import { Container } from "@/components/ui/container";
@@ -120,39 +118,6 @@ const Index = () => {
                 )}
               </Container>
             </Section>
-
-            {/* Data Manager Highlight */}
-            <Section spacing="md" background="muted">
-              <Container>
-                <Card className="border-2 border-blue-200 dark:border-blue-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl bg-blue-100 dark:bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center">
-                        <Database className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <Heading level={2} size="xl" className="mb-2">
-                          Gestion des Données
-                        </Heading>
-                        <Text color="muted">
-                          Gérez, exportez et importez toutes vos données en un seul endroit.
-                        </Text>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      onClick={() => setActiveSection("data-manager")}
-                      className="w-full sm:w-auto"
-                      variant="outline"
-                    >
-                      <Database className="w-4 h-4 mr-2" />
-                      Accéder au Gestionnaire
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Container>
-            </Section>
             
             {/* Tools Grid */}
             <Section spacing="lg">
@@ -225,6 +190,14 @@ const Index = () => {
                     icon="📝"
                     tools={["Compteur avancé", "Formatage", "Analyse sentiment", "Transformation", "SEO", "Markdown", "Colorisation", "Emojis"]}
                     onClick={() => setActiveSection("text-utils-advanced")}
+                  />
+
+                  <ToolCard
+                    title="Gestionnaire de Données"
+                    description="Gérez, exportez et importez toutes vos données en un seul endroit"
+                    icon="🗃️"
+                    tools={["Export universel", "Import/Export", "Statistiques", "Performance", "Tests intégrés"]}
+                    onClick={() => setActiveSection("data-manager")}
                   />
                   
                   <ToolCard

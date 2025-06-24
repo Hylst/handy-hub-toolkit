@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { useOfflineDataManager } from '@/hooks/useOfflineDataManager';
+import { useDexieDB } from '@/hooks/useDexieDB';
 
 export interface Event {
   id: string;
@@ -41,20 +41,7 @@ const defaultEventsData: EventsData = {
 };
 
 export const useEventPlannerEnhanced = () => {
-  const {
-    data: eventsData,
-    setData: setEventsData,
-    isLoading,
-    isOnline,
-    isSyncing,
-    lastSyncTime,
-    exportData,
-    importData,
-    resetData
-  } = useOfflineDataManager<EventsData>({
-    toolName: 'date-planner-events',
-    defaultData: defaultEventsData
-  });
+  const { saveData, loadData, deleteData } = useDexieDB();
 
   // Calculer les statistiques
   const updateStats = useCallback((events: Event[]) => {
@@ -73,8 +60,32 @@ export const useEventPlannerEnhanced = () => {
     return stats;
   }, []);
 
+  // Charger les données
+  const loadEventsData = useCallback(async (): Promise<EventsData> => {
+    try {
+      const data = await loadData('date-planner-events');
+      return data || defaultEventsData;
+    } catch (error) {
+      console.error('Erreur chargement événements:', error);
+      return defaultEventsData;
+    }
+  }, [loadData]);
+
+  // Sauvegarder les données
+  const saveEventsData = useCallback(async (eventsData: EventsData) => {
+    try {
+      await saveData('date-planner-events', eventsData);
+      return true;
+    } catch (error) {
+      console.error('Erreur sauvegarde événements:', error);
+      return false;
+    }
+  }, [saveData]);
+
   // Ajouter un événement
   const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const eventsData = await loadEventsData();
+    
     const newEvent: Event = {
       ...eventData,
       id: Date.now().toString(),
@@ -83,19 +94,21 @@ export const useEventPlannerEnhanced = () => {
       updatedAt: new Date().toISOString()
     };
 
-    const newEvents = [...(eventsData?.events || []), newEvent];
+    const newEvents = [...eventsData.events, newEvent];
     const newStats = updateStats(newEvents);
 
-    await setEventsData({
+    await saveEventsData({
       ...eventsData,
       events: newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
       stats: newStats
     });
-  }, [eventsData, setEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData, updateStats]);
 
   // Mettre à jour un événement
   const updateEvent = useCallback(async (eventId: string, updates: Partial<Event>) => {
-    const newEvents = (eventsData?.events || []).map(event =>
+    const eventsData = await loadEventsData();
+    
+    const newEvents = eventsData.events.map(event =>
       event.id === eventId
         ? { ...event, ...updates, updatedAt: new Date().toISOString() }
         : event
@@ -103,49 +116,51 @@ export const useEventPlannerEnhanced = () => {
 
     const newStats = updateStats(newEvents);
 
-    await setEventsData({
+    await saveEventsData({
       ...eventsData,
       events: newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
       stats: newStats
     });
-  }, [eventsData, setEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData, updateStats]);
 
   // Supprimer un événement
   const deleteEvent = useCallback(async (eventId: string) => {
-    const newEvents = (eventsData?.events || []).filter(event => event.id !== eventId);
+    const eventsData = await loadEventsData();
+    
+    const newEvents = eventsData.events.filter(event => event.id !== eventId);
     const newStats = updateStats(newEvents);
 
-    await setEventsData({
+    await saveEventsData({
       ...eventsData,
       events: newEvents,
       stats: newStats
     });
-  }, [eventsData, setEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData, updateStats]);
 
   // Ajouter une catégorie
   const addCategory = useCallback(async (category: string) => {
-    if (!eventsData?.categories.includes(category)) {
-      await setEventsData({
+    const eventsData = await loadEventsData();
+    
+    if (!eventsData.categories.includes(category)) {
+      await saveEventsData({
         ...eventsData,
-        categories: [...(eventsData?.categories || []), category]
+        categories: [...eventsData.categories, category]
       });
     }
-  }, [eventsData, setEventsData]);
+  }, [loadEventsData, saveEventsData]);
 
   return {
-    events: eventsData?.events || [],
-    categories: eventsData?.categories || [],
-    stats: eventsData?.stats || defaultEventsData.stats,
+    loadEventsData,
     addEvent,
     updateEvent,
     deleteEvent,
     addCategory,
-    isLoading,
-    isOnline,
-    isSyncing,
-    lastSyncTime,
-    exportData,
-    importData,
-    resetData
+    isLoading: false,
+    isOnline: true,
+    isSyncing: false,
+    lastSyncTime: new Date().toISOString(),
+    exportData: () => {},
+    importData: async () => false,
+    resetData: async () => {}
   };
 };

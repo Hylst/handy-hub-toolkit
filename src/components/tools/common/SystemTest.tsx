@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, AlertCircle, Play } from 'lucide-react';
 import { useDexieDB } from '@/hooks/useDexieDB';
-import { useOptimizedDataManager } from '@/hooks/useOptimizedDataManager';
 import { useUniversalDataManager } from '@/hooks/useUniversalDataManager';
 
 interface TestResult {
@@ -18,14 +17,12 @@ interface TestResult {
 export const SystemTest = () => {
   const [tests, setTests] = useState<TestResult[]>([
     { name: 'Dexie DB Connection', status: 'pending', message: 'En attente...' },
-    { name: 'Data Manager', status: 'pending', message: 'En attente...' },
     { name: 'Universal Export', status: 'pending', message: 'En attente...' },
     { name: 'Performance', status: 'pending', message: 'En attente...' }
   ]);
 
   const [isRunning, setIsRunning] = useState(false);
   const { saveData, loadData, getStorageStats } = useDexieDB();
-  const dataManager = useOptimizedDataManager({ toolName: 'test-tool', defaultData: { test: true } });
   const { getUniversalStats } = useUniversalDataManager();
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
@@ -58,18 +55,19 @@ export const SystemTest = () => {
       });
     }
 
-    // Test 2: Data Manager
-    updateTest(1, { status: 'running', message: 'Test du gestionnaire de données...' });
+    // Test 2: Universal Export
+    updateTest(1, { status: 'running', message: 'Test de l\'export universel...' });
     const start2 = performance.now();
     try {
-      if (dataManager.data && !dataManager.isLoading) {
+      const stats = await getUniversalStats();
+      if (stats) {
         updateTest(1, { 
           status: 'success', 
-          message: 'Data Manager OK', 
+          message: `Export OK (${stats.totalRecords} enregistrements)`, 
           duration: performance.now() - start2 
         });
       } else {
-        throw new Error('Data Manager non initialisé');
+        throw new Error('Statistiques non disponibles');
       }
     } catch (error) {
       updateTest(1, { 
@@ -79,46 +77,24 @@ export const SystemTest = () => {
       });
     }
 
-    // Test 3: Universal Export
-    updateTest(2, { status: 'running', message: 'Test de l\'export universel...' });
+    // Test 3: Performance
+    updateTest(2, { status: 'running', message: 'Test de performance...' });
     const start3 = performance.now();
-    try {
-      const stats = await getUniversalStats();
-      if (stats) {
-        updateTest(2, { 
-          status: 'success', 
-          message: `Export OK (${stats.totalRecords} enregistrements)`, 
-          duration: performance.now() - start3 
-        });
-      } else {
-        throw new Error('Statistiques non disponibles');
-      }
-    } catch (error) {
-      updateTest(2, { 
-        status: 'error', 
-        message: `Erreur: ${error}`,
-        duration: performance.now() - start3 
-      });
-    }
-
-    // Test 4: Performance
-    updateTest(3, { status: 'running', message: 'Test de performance...' });
-    const start4 = performance.now();
     try {
       const storageStats = await getStorageStats();
       const memoryInfo = (performance as any).memory;
       const memory = memoryInfo ? memoryInfo.usedJSHeapSize / 1024 / 1024 : 0;
       
-      updateTest(3, { 
+      updateTest(2, { 
         status: 'success', 
         message: `Performance OK (${Math.round(memory)}MB, ${storageStats?.totalRecords || 0} records)`, 
-        duration: performance.now() - start4 
+        duration: performance.now() - start3 
       });
     } catch (error) {
-      updateTest(3, { 
+      updateTest(2, { 
         status: 'error', 
         message: `Erreur: ${error}`,
-        duration: performance.now() - start4 
+        duration: performance.now() - start3 
       });
     }
 

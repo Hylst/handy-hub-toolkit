@@ -78,7 +78,7 @@ export const useIndexedDBManager = (config: DatabaseConfig) => {
     }
   };
 
-  const loadData = async (tool: string, key: string): Promise<{ data: any } | null> => {
+  const loadData = async (tool: string, key: string): Promise<any | null> => {
     try {
       const db = await openDB();
       const transaction = db.transaction([tool], 'readonly');
@@ -93,7 +93,7 @@ export const useIndexedDBManager = (config: DatabaseConfig) => {
       db.close();
       
       if (result) {
-        return { data: result.data };
+        return result.data;
       }
       return null;
     } catch (error) {
@@ -102,11 +102,123 @@ export const useIndexedDBManager = (config: DatabaseConfig) => {
     }
   };
 
+  const deleteData = async (tool: string, key: string): Promise<boolean> => {
+    try {
+      const db = await openDB();
+      const transaction = db.transaction([tool], 'readwrite');
+      const store = transaction.objectStore(tool);
+
+      await new Promise<void>((resolve, reject) => {
+        const request = store.delete(key);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+
+      db.close();
+      return true;
+    } catch (error) {
+      console.error(`Erreur suppression IndexedDB pour ${tool}:`, error);
+      return false;
+    }
+  };
+
+  const getAllKeys = async (tool: string): Promise<string[]> => {
+    try {
+      const db = await openDB();
+      const transaction = db.transaction([tool], 'readonly');
+      const store = transaction.objectStore(tool);
+
+      const keys = await new Promise<string[]>((resolve, reject) => {
+        const request = store.getAllKeys();
+        request.onsuccess = () => resolve(request.result as string[]);
+        request.onerror = () => reject(request.error);
+      });
+
+      db.close();
+      return keys;
+    } catch (error) {
+      console.error(`Erreur récupération clés IndexedDB pour ${tool}:`, error);
+      return [];
+    }
+  };
+
+  const exportAllData = async (): Promise<Record<string, any>> => {
+    try {
+      const db = await openDB();
+      const allData: Record<string, any> = {};
+
+      for (const storeConfig of config.stores) {
+        const transaction = db.transaction([storeConfig.name], 'readonly');
+        const store = transaction.objectStore(storeConfig.name);
+
+        const data = await new Promise<StoredItem[]>((resolve, reject) => {
+          const request = store.getAll();
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+
+        allData[storeConfig.name] = data;
+      }
+
+      db.close();
+      return allData;
+    } catch (error) {
+      console.error('Erreur export toutes données IndexedDB:', error);
+      return {};
+    }
+  };
+
+  const clearAllData = async (): Promise<boolean> => {
+    try {
+      const db = await openDB();
+      
+      for (const storeConfig of config.stores) {
+        const transaction = db.transaction([storeConfig.name], 'readwrite');
+        const store = transaction.objectStore(storeConfig.name);
+
+        await new Promise<void>((resolve, reject) => {
+          const request = store.clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      db.close();
+      return true;
+    } catch (error) {
+      console.error('Erreur nettoyage toutes données IndexedDB:', error);
+      return false;
+    }
+  };
+
+  const getStorageInfo = async (): Promise<{ estimatedSize: number; quota: number }> => {
+    try {
+      if ('storage' in navigator && 'estimate' in navigator.storage) {
+        const estimate = await navigator.storage.estimate();
+        return {
+          estimatedSize: estimate.usage || 0,
+          quota: estimate.quota || 0
+        };
+      }
+      return { estimatedSize: 0, quota: 0 };
+    } catch (error) {
+      console.error('Erreur info stockage:', error);
+      return { estimatedSize: 0, quota: 0 };
+    }
+  };
+
   const isInitialized = true; // IndexedDB est toujours disponible dans les navigateurs modernes
+  const isLoading = false; // Pas de chargement initial pour IndexedDB
 
   return {
     saveData,
     loadData,
-    isInitialized
+    deleteData,
+    getAllKeys,
+    exportAllData,
+    clearAllData,
+    getStorageInfo,
+    isInitialized,
+    isLoading
   };
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database } from 'lucide-react';
 import { useUniversalDataManager } from '@/hooks/useUniversalDataManager';
@@ -34,67 +34,78 @@ export const UniversalDataManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [showTests, setShowTests] = useState(false);
+  
+  const loadingRef = useRef<boolean>(false);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Charger les statistiques avec un debounce simple
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  // Chargement des statistiques optimisé avec debounce
+  const loadStats = useCallback(async () => {
+    if (loadingRef.current) return;
     
-    const loadStats = async () => {
-      try {
-        const [universalStats, storageStats] = await Promise.all([
-          getUniversalStats(),
-          getStorageStats()
-        ]);
+    loadingRef.current = true;
+    try {
+      const [universalStats, storageStats] = await Promise.all([
+        getUniversalStats(),
+        getStorageStats()
+      ]);
+      
+      if (universalStats && storageStats) {
+        const mockStats: AppStatistics = {
+          totalTools: universalStats.tools?.length || 0,
+          totalDataPoints: storageStats.totalRecords,
+          storageUsed: storageStats.estimatedSize,
+          storageQuota: 50 * 1024 * 1024,
+          lastActivity: universalStats.lastActivity || new Date().toISOString(),
+          toolsStats: universalStats.tools?.reduce((acc: any, tool: string) => {
+            acc[tool] = {
+              itemCount: 1,
+              lastUpdated: new Date().toISOString()
+            };
+            return acc;
+          }, {}) || {}
+        };
         
-        if (universalStats && storageStats) {
-          const mockStats: AppStatistics = {
-            totalTools: universalStats.tools?.length || 0,
-            totalDataPoints: storageStats.totalRecords,
-            storageUsed: storageStats.estimatedSize,
-            storageQuota: 50 * 1024 * 1024, // 50MB par défaut
-            lastActivity: universalStats.lastActivity || new Date().toISOString(),
-            toolsStats: universalStats.tools?.reduce((acc: any, tool: string) => {
-              acc[tool] = {
-                itemCount: 1,
-                lastUpdated: new Date().toISOString()
-              };
-              return acc;
-            }, {}) || {}
-          };
-          
-          setStats(mockStats);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des stats:', error);
+        setStats(mockStats);
       }
-    };
+    } catch (error) {
+      console.error('Erreur lors du chargement des stats:', error);
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [getUniversalStats, getStorageStats]);
 
-    // Chargement initial immédiat
+  // Chargement initial et rafraîchissement périodique
+  useEffect(() => {
+    // Chargement immédiat
     loadStats();
     
-    // Ensuite rafraîchir toutes les minutes seulement
+    // Rafraîchissement toutes les 2 minutes
     const interval = setInterval(() => {
-      timeoutId = setTimeout(loadStats, 500); // Debounce de 500ms
-    }, 60000); // Toutes les 60 secondes
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(loadStats, 1000);
+    }, 120000);
     
     return () => {
       clearInterval(interval);
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [getUniversalStats, getStorageStats]);
+  }, [loadStats]);
 
-  const handleExport = async () => {
+  // Handlers optimisés
+  const handleExport = useCallback(async () => {
     setIsLoading(true);
     try {
-      await exportUniversalData({
+      const success = await exportUniversalData({
         includeHistory: true,
         includePreferences: true
       });
       
-      toast({
-        title: "Export réussi",
-        description: "Toutes les données ont été exportées",
-      });
+      if (success) {
+        toast({
+          title: "Export réussi",
+          description: "Toutes les données ont été exportées",
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
       toast({
@@ -105,9 +116,9 @@ export const UniversalDataManager = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [exportUniversalData, toast]);
 
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -121,10 +132,8 @@ export const UniversalDataManager = () => {
           description: "Les données ont été importées avec succès",
         });
         
-        // Recharger les stats après un court délai
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Recharger les stats après un délai
+        setTimeout(loadStats, 2000);
       }
     } catch (error) {
       console.error('Erreur lors de l\'import:', error);
@@ -137,9 +146,9 @@ export const UniversalDataManager = () => {
       setIsLoading(false);
       event.target.value = '';
     }
-  };
+  }, [importUniversalData, toast, loadStats]);
 
-  const handleReset = async () => {
+  const handleReset = useCallback(async () => {
     setIsResetting(true);
     try {
       const success = await resetUniversalData();
@@ -165,7 +174,7 @@ export const UniversalDataManager = () => {
     } finally {
       setIsResetting(false);
     }
-  };
+  }, [resetUniversalData, toast]);
 
   return (
     <div className="space-y-6">
@@ -219,10 +228,10 @@ export const UniversalDataManager = () => {
           <div className="text-xs space-y-1">
             <div>✅ <strong>IndexedDB unifié:</strong> Migration complète vers Dexie</div>
             <div>✅ <strong>Performance optimisée:</strong> Réduction des appels redondants</div>
-            <div>✅ <strong>Tests stabilisés:</strong> Suppression des hooks non initialisés</div>
-            <div>✅ <strong>Interface cohérente:</strong> Cartes d'outils uniformisées</div>
+            <div>✅ <strong>Hooks simplifiés:</strong> Chaîne de dépendances nettoyée</div>
             <div>✅ <strong>Debouncing amélioré:</strong> Moins de charge système</div>
             <div>✅ <strong>Gestion d'erreurs:</strong> Messages plus clairs</div>
+            <div>✅ <strong>Transactions optimisées:</strong> Opérations par batch</div>
           </div>
         </CardContent>
       </Card>

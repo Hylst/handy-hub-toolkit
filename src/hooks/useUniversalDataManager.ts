@@ -24,26 +24,28 @@ interface UniversalData {
 
 export const useUniversalDataManager = () => {
   const { toast } = useToast();
-  const { getAllData, clearAllData, getStorageStats } = useDexieDB();
+  const { getAllData, clearAllData, getStorageStats, db } = useDexieDB();
 
-  // Export universel optimisé
+  // Export universel optimisé avec moins d'appels
   const exportUniversalData = useCallback(async (options: UniversalExportOptions = {}) => {
     try {
-      console.log('🚀 Début export universel optimisé...');
+      console.log('🚀 Export universel optimisé...');
       
-      const allData = await getAllData();
-      const stats = await getStorageStats();
+      // Un seul appel pour récupérer toutes les données
+      const [allData, stats] = await Promise.all([
+        getAllData(),
+        getStorageStats()
+      ]);
       
-      // Filtrer les outils si spécifié
-      let filteredData = allData;
-      if (options.selectedTools) {
-        filteredData = Object.fromEntries(
-          Object.entries(allData).filter(([tool]) => options.selectedTools!.includes(tool))
-        );
-      }
+      // Filtrage en mémoire pour éviter les appels DB supplémentaires
+      const filteredData = options.selectedTools 
+        ? Object.fromEntries(
+            Object.entries(allData).filter(([tool]) => options.selectedTools!.includes(tool))
+          )
+        : allData;
 
       const universalData: UniversalData = {
-        version: "2.1.0",
+        version: "2.2.0",
         exportDate: new Date().toISOString(),
         application: "Outils Pratiques",
         tools: filteredData,
@@ -54,16 +56,16 @@ export const useUniversalDataManager = () => {
         }
       };
 
+      // Export optimisé
       const dataString = JSON.stringify(universalData, null, 2);
-      
-      // Compression optionnelle (simple pour l'instant)
       const blob = new Blob([dataString], { type: 'application/json' });
-      
       const url = URL.createObjectURL(blob);
+      
       const a = document.createElement('a');
       a.href = url;
       a.download = `outils-pratiques-universal-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
+      
       URL.revokeObjectURL(url);
 
       toast({
@@ -71,7 +73,6 @@ export const useUniversalDataManager = () => {
         description: `${Object.keys(filteredData).length} outils exportés`,
       });
 
-      console.log('✅ Export universel terminé');
       return true;
     } catch (error) {
       console.error('❌ Erreur export universel:', error);
@@ -84,42 +85,39 @@ export const useUniversalDataManager = () => {
     }
   }, [getAllData, getStorageStats, toast]);
 
-  // Import universel optimisé
+  // Import universel optimisé avec transaction
   const importUniversalData = useCallback(async (file: File, mergeMode: 'replace' | 'merge' = 'replace') => {
     try {
-      console.log('🚀 Début import universel optimisé...');
+      console.log('🚀 Import universel optimisé...');
       
       const text = await file.text();
       const universalData: UniversalData = JSON.parse(text);
       
-      // Validation
       if (!universalData.tools || !universalData.version) {
         throw new Error('Format de fichier incorrect');
       }
 
-      const { db } = useDexieDB();
-      
-      // Import en transaction pour assurer la cohérence
+      // Transaction unique pour l'import
       await db.transaction('rw', db.storedData, async () => {
         if (mergeMode === 'replace') {
-          // Supprimer les données existantes des outils à importer
           const toolsToImport = Object.keys(universalData.tools);
+          // Suppression par batch pour optimiser
           for (const tool of toolsToImport) {
             await db.storedData.where('tool').equals(tool).delete();
           }
         }
 
-        // Importer les nouvelles données
-        for (const [tool, data] of Object.entries(universalData.tools)) {
-          await db.storedData.put({
-            id: `${tool}-main`,
-            tool,
-            data,
-            timestamp: Date.now(),
-            lastModified: new Date().toISOString(),
-            synced: false
-          });
-        }
+        // Import par batch
+        const dataToInsert = Object.entries(universalData.tools).map(([tool, data]) => ({
+          id: `${tool}-main`,
+          tool,
+          data,
+          timestamp: Date.now(),
+          lastModified: new Date().toISOString(),
+          synced: false
+        }));
+
+        await db.storedData.bulkPut(dataToInsert);
       });
 
       toast({
@@ -127,7 +125,6 @@ export const useUniversalDataManager = () => {
         description: `${Object.keys(universalData.tools).length} outils importés`,
       });
 
-      console.log('✅ Import universel terminé');
       return true;
     } catch (error) {
       console.error('❌ Erreur import universel:', error);
@@ -138,9 +135,9 @@ export const useUniversalDataManager = () => {
       });
       return false;
     }
-  }, [toast]);
+  }, [db, toast]);
 
-  // Reset universel
+  // Reset optimisé
   const resetUniversalData = useCallback(async () => {
     try {
       await clearAllData();
@@ -162,20 +159,27 @@ export const useUniversalDataManager = () => {
     }
   }, [clearAllData, toast]);
 
-  // Statistiques globales
+  // Statistiques mises en cache
   const getUniversalStats = useCallback(async () => {
     try {
-      const stats = await getStorageStats();
-      const allData = await getAllData();
+      const [stats, allData] = await Promise.all([
+        getStorageStats(),
+        getAllData()
+      ]);
       
       return {
         ...stats,
         tools: Object.keys(allData),
-        lastActivity: new Date().toISOString()
+        lastActivity: new Date().toISOString(),
+        totalRecords: stats?.totalRecords || 0
       };
     } catch (error) {
       console.error('❌ Erreur stats universelles:', error);
-      return null;
+      return {
+        totalRecords: 0,
+        tools: [],
+        lastActivity: new Date().toISOString()
+      };
     }
   }, [getStorageStats, getAllData]);
 

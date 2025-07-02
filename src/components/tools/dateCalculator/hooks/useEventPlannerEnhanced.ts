@@ -41,51 +41,59 @@ const defaultEventsData: EventsData = {
 };
 
 export const useEventPlannerEnhanced = () => {
-  const { saveData, loadData, deleteData } = useDexieDB();
+  const { saveData, loadData } = useDexieDB();
 
-  // Calculer les statistiques
-  const updateStats = useCallback((events: Event[]) => {
+  // Calculer les statistiques une seule fois
+  const calculateStats = useCallback((events: Event[]) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const todayStr = today.toISOString().split('T')[0];
     
-    const stats = {
+    return {
       totalEvents: events.length,
       upcomingEvents: events.filter(e => new Date(e.date) > today).length,
       todayEvents: events.filter(e => e.date === todayStr).length,
       overdueEvents: events.filter(e => new Date(e.date) < today && e.type === 'deadline').length
     };
-    
-    return stats;
   }, []);
 
-  // Charger les données
+  // Charger les données avec gestion d'erreur améliorée
   const loadEventsData = useCallback(async (): Promise<EventsData> => {
     try {
       const data = await loadData('date-planner-events');
-      return data || defaultEventsData;
+      if (data && data.events) {
+        return {
+          ...data,
+          stats: calculateStats(data.events)
+        };
+      }
+      return defaultEventsData;
     } catch (error) {
       console.error('Erreur chargement événements:', error);
       return defaultEventsData;
     }
-  }, [loadData]);
+  }, [loadData, calculateStats]);
 
-  // Sauvegarder les données
+  // Sauvegarder avec optimisation
   const saveEventsData = useCallback(async (eventsData: EventsData) => {
     try {
-      await saveData('date-planner-events', eventsData);
+      const dataToSave = {
+        ...eventsData,
+        stats: calculateStats(eventsData.events),
+        lastModified: new Date().toISOString()
+      };
+      
+      await saveData('date-planner-events', dataToSave);
       return true;
     } catch (error) {
       console.error('Erreur sauvegarde événements:', error);
       return false;
     }
-  }, [saveData]);
+  }, [saveData, calculateStats]);
 
-  // Ajouter un événement
+  // Opérations CRUD simplifiées
   const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
     const eventsData = await loadEventsData();
-    
     const newEvent: Event = {
       ...eventData,
       id: Date.now().toString(),
@@ -94,53 +102,42 @@ export const useEventPlannerEnhanced = () => {
       updatedAt: new Date().toISOString()
     };
 
-    const newEvents = [...eventsData.events, newEvent];
-    const newStats = updateStats(newEvents);
+    const updatedEvents = [...eventsData.events, newEvent].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
     await saveEventsData({
       ...eventsData,
-      events: newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-      stats: newStats
+      events: updatedEvents
     });
-  }, [loadEventsData, saveEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData]);
 
-  // Mettre à jour un événement
   const updateEvent = useCallback(async (eventId: string, updates: Partial<Event>) => {
     const eventsData = await loadEventsData();
-    
-    const newEvents = eventsData.events.map(event =>
+    const updatedEvents = eventsData.events.map(event =>
       event.id === eventId
         ? { ...event, ...updates, updatedAt: new Date().toISOString() }
         : event
     );
 
-    const newStats = updateStats(newEvents);
-
     await saveEventsData({
       ...eventsData,
-      events: newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-      stats: newStats
+      events: updatedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     });
-  }, [loadEventsData, saveEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData]);
 
-  // Supprimer un événement
   const deleteEvent = useCallback(async (eventId: string) => {
     const eventsData = await loadEventsData();
-    
-    const newEvents = eventsData.events.filter(event => event.id !== eventId);
-    const newStats = updateStats(newEvents);
+    const filteredEvents = eventsData.events.filter(event => event.id !== eventId);
 
     await saveEventsData({
       ...eventsData,
-      events: newEvents,
-      stats: newStats
+      events: filteredEvents
     });
-  }, [loadEventsData, saveEventsData, updateStats]);
+  }, [loadEventsData, saveEventsData]);
 
-  // Ajouter une catégorie
   const addCategory = useCallback(async (category: string) => {
     const eventsData = await loadEventsData();
-    
     if (!eventsData.categories.includes(category)) {
       await saveEventsData({
         ...eventsData,
@@ -155,12 +152,13 @@ export const useEventPlannerEnhanced = () => {
     updateEvent,
     deleteEvent,
     addCategory,
+    // Propriétés statiques pour éviter les re-renders
     isLoading: false,
     isOnline: true,
     isSyncing: false,
     lastSyncTime: new Date().toISOString(),
-    exportData: () => {},
+    exportData: () => Promise.resolve(),
     importData: async () => false,
-    resetData: async () => {}
+    resetData: async () => Promise.resolve()
   };
 };

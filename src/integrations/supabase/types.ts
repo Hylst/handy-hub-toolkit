@@ -65,7 +65,7 @@ export type Database = {
           offline_mode: boolean | null
           sync_enabled: boolean | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -74,7 +74,7 @@ export type Database = {
           offline_mode?: boolean | null
           sync_enabled?: boolean | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -83,7 +83,7 @@ export type Database = {
           offline_mode?: boolean | null
           sync_enabled?: boolean | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

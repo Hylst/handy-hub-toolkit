@@ -55,13 +55,13 @@ export const UniversalDataManager = () => {
           storageUsed: storageStats.estimatedSize,
           storageQuota: 50 * 1024 * 1024,
           lastActivity: universalStats.lastActivity || new Date().toISOString(),
-          toolsStats: universalStats.tools?.reduce((acc: any, tool: string) => {
+          toolsStats: universalStats.tools?.reduce((acc: Record<string, { itemCount: number; lastUpdated: string }>, tool: string) => {
             acc[tool] = {
               itemCount: 1,
               lastUpdated: new Date().toISOString()
             };
             return acc;
-          }, {}) || {}
+          }, {} as Record<string, { itemCount: number; lastUpdated: string }>) || {}
         };
         
         setStats(mockStats);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database } from 'lucide-react';
@@ -56,7 +55,7 @@ export const UniversalDataManager = () => {
           storageUsed: storageStats.estimatedSize,
           storageQuota: 50 * 1024 * 1024,
           lastActivity: universalStats.lastActivity || new Date().toISOString(),
-          toolsStats: universalStats.tools?.reduce<Record<string, { itemCount: number; lastUpdated: string }>>((acc, tool) => {
+          toolsStats: universalStats.tools?.reduce((acc: Record<string, { itemCount: number; lastUpdated: string }>, tool: string) => {
             acc[tool] = {
               itemCount: 1,
               lastUpdated: new Date().toISOString()

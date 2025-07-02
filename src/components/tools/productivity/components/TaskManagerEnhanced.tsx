@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { CheckSquare, Plus, Search, Filter, Trash2, Edit, Calendar, Flag, Tag, Split, FileText } from 'lucide-react';
+import { CheckSquare, Plus, Search, Trash2, Edit, Calendar, Flag, Tag, Split } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
@@ -38,7 +39,9 @@ export const TaskManagerEnhanced = () => {
     lastSyncTime,
     exportData,
     importData,
-    resetData
+    resetData,
+    exportToGoogleTasks,
+    exportToICalendar
   } = useTaskManagerEnhanced();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -90,55 +93,6 @@ export const TaskManagerEnhanced = () => {
         dueDate: task.dueDate
       });
     }
-  };
-
-  // Export vers format Google Tasks
-  const exportToGoogleTasks = () => {
-    const googleTasksFormat = tasks.map(task => ({
-      title: task.title,
-      notes: task.description || '',
-      status: task.completed ? 'completed' : 'needsAction',
-      due: task.dueDate ? new Date(task.dueDate).toISOString() : undefined
-    }));
-
-    const blob = new Blob([JSON.stringify(googleTasksFormat, null, 2)], {
-      type: 'application/json'
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `google-tasks-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Export vers format iCalendar
-  const exportToICalendar = () => {
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Outils Pratiques//Gestionnaire de Tâches//FR',
-      ...tasks.map(task => [
-        'BEGIN:VTODO',
-        `UID:${task.id}@outils-pratiques.com`,
-        `SUMMARY:${task.title}`,
-        task.description ? `DESCRIPTION:${task.description}` : '',
-        `STATUS:${task.completed ? 'COMPLETED' : 'NEEDS-ACTION'}`,
-        `PRIORITY:${task.priority === 'high' ? '1' : task.priority === 'medium' ? '5' : '9'}`,
-        task.dueDate ? `DUE:${new Date(task.dueDate).toISOString().replace(/[-:]/g, '').split('.')[0]}Z` : '',
-        `CATEGORIES:${task.category}`,
-        'END:VTODO'
-      ].filter(Boolean)).flat(),
-      'END:VCALENDAR'
-    ].join('\r\n');
-
-    const blob = new Blob([icsContent], { type: 'text/calendar' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tasks-${new Date().toISOString().split('T')[0]}.ics`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleAddTask = async () => {
@@ -329,14 +283,6 @@ export const TaskManagerEnhanced = () => {
             >
               <Tag className="w-4 h-4 mr-2" />
               Trier par mots-clés
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportToGoogleTasks}>
-              <FileText className="w-4 h-4 mr-2" />
-              Export Google Tasks
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportToICalendar}>
-              <Calendar className="w-4 h-4 mr-2" />
-              Export iCalendar
             </Button>
           </div>
 
@@ -555,7 +501,7 @@ export const TaskManagerEnhanced = () => {
         </CardContent>
       </Card>
 
-      {/* Import/Export */}
+      {/* Import/Export avec formats spécialisés */}
       <DataImportExport
         onExport={exportData}
         onImport={importData}
@@ -564,6 +510,8 @@ export const TaskManagerEnhanced = () => {
         isSyncing={isSyncing}
         lastSyncTime={lastSyncTime}
         toolName="Tâches"
+        onExportGoogleTasks={exportToGoogleTasks}
+        onExportICalendar={exportToICalendar}
       />
     </div>
   );

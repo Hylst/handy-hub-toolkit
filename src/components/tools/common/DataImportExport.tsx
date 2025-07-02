@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Download, Upload, RotateCcw, Cloud, CloudOff, Loader2 } from 'lucide-react';
+import { Download, Upload, RotateCcw, Cloud, CloudOff, Loader2, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -17,6 +17,8 @@ interface DataImportExportProps {
   isSyncing: boolean;
   lastSyncTime: string | null;
   toolName: string;
+  onExportGoogleTasks?: () => void;
+  onExportICalendar?: () => void;
 }
 
 export const DataImportExport = ({
@@ -26,7 +28,9 @@ export const DataImportExport = ({
   isOnline,
   isSyncing,
   lastSyncTime,
-  toolName
+  toolName,
+  onExportGoogleTasks,
+  onExportICalendar
 }: DataImportExportProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,7 +84,7 @@ export const DataImportExport = ({
           </div>
         )}
 
-        {/* Actions Import/Export */}
+        {/* Actions Import/Export Standard */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Button
@@ -120,6 +124,51 @@ export const DataImportExport = ({
             </p>
           </div>
         </div>
+
+        {/* Exports spécialisés pour les tâches */}
+        {(onExportGoogleTasks || onExportICalendar) && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Exports spécialisés
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {onExportGoogleTasks && (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={onExportGoogleTasks}
+                      className="w-full text-xs lg:text-sm"
+                      variant="outline"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Export Google Tasks
+                    </Button>
+                    <p className="text-xs text-gray-500 text-center">
+                      Format Google Tasks
+                    </p>
+                  </div>
+                )}
+                
+                {onExportICalendar && (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={onExportICalendar}
+                      className="w-full text-xs lg:text-sm"
+                      variant="outline"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Export iCalendar
+                    </Button>
+                    <p className="text-xs text-gray-500 text-center">
+                      Format iCalendar (.ics)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 

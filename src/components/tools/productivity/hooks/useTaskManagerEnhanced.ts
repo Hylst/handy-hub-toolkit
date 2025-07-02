@@ -57,7 +57,7 @@ export const useTaskManagerEnhanced = () => {
     highPriorityTasks: tasks.filter(t => t.priority === 'high' && !t.completed).length
   }), []);
 
-  // Chargement initial
+  // Chargement initial avec gestion de version
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -155,12 +155,89 @@ export const useTaskManagerEnhanced = () => {
     }
   }, [tasksData, saveTasksData]);
 
+  // Export vers format Google Tasks
+  const exportToGoogleTasks = useCallback(() => {
+    try {
+      const googleTasksFormat = tasksData.tasks.map(task => ({
+        title: task.title,
+        notes: task.description || '',
+        status: task.completed ? 'completed' : 'needsAction',
+        due: task.dueDate ? new Date(task.dueDate).toISOString() : undefined
+      }));
+
+      const blob = new Blob([JSON.stringify(googleTasksFormat, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `google-tasks-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export Google Tasks réussi",
+        description: "Tâches exportées au format Google Tasks",
+      });
+    } catch (error) {
+      console.error('Erreur export Google Tasks:', error);
+      toast({
+        title: "Erreur d'export",
+        description: "Impossible d'exporter vers Google Tasks",
+        variant: "destructive",
+      });
+    }
+  }, [tasksData.tasks, toast]);
+
+  // Export vers format iCalendar
+  const exportToICalendar = useCallback(() => {
+    try {
+      const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Outils Pratiques//Gestionnaire de Tâches//FR',
+        ...tasksData.tasks.map(task => [
+          'BEGIN:VTODO',
+          `UID:${task.id}@outils-pratiques.com`,
+          `SUMMARY:${task.title}`,
+          task.description ? `DESCRIPTION:${task.description}` : '',
+          `STATUS:${task.completed ? 'COMPLETED' : 'NEEDS-ACTION'}`,
+          `PRIORITY:${task.priority === 'high' ? '1' : task.priority === 'medium' ? '5' : '9'}`,
+          task.dueDate ? `DUE:${new Date(task.dueDate).toISOString().replace(/[-:]/g, '').split('.')[0]}Z` : '',
+          `CATEGORIES:${task.category}`,
+          'END:VTODO'
+        ].filter(Boolean)).flat(),
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsContent], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tasks-${new Date().toISOString().split('T')[0]}.ics`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export iCalendar réussi",
+        description: "Tâches exportées au format iCalendar",
+      });
+    } catch (error) {
+      console.error('Erreur export iCalendar:', error);
+      toast({
+        title: "Erreur d'export",
+        description: "Impossible d'exporter vers iCalendar",
+        variant: "destructive",
+      });
+    }
+  }, [tasksData.tasks, toast]);
+
   // Export/Import simplifiés
   const exportData = useCallback(() => {
     try {
       const dataToExport = {
         tool: 'productivity-tasks',
-        version: "2.2.0",
+        version: "2.3.0",
         exportDate: new Date().toISOString(),
         data: tasksData
       };
@@ -172,7 +249,7 @@ export const useTaskManagerEnhanced = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tasks-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `tasks-${new Date().toISOString().split('T')[0]}.json`;  
       a.click();
       URL.revokeObjectURL(url);
       
@@ -271,6 +348,8 @@ export const useTaskManagerEnhanced = () => {
     lastSyncTime: new Date().toISOString(),
     exportData,
     importData,
-    resetData
+    resetData,
+    exportToGoogleTasks,
+    exportToICalendar
   };
 };

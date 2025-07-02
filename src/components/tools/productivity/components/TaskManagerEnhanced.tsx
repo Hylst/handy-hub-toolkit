@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { CheckSquare, Plus, Search, Filter, Trash2, Edit, Calendar, Flag, Tag, Split, FileExport } from 'lucide-react';
+import { CheckSquare, Plus, Search, Filter, Trash2, Edit, Calendar, Flag, Tag, Split, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
@@ -332,7 +331,7 @@ export const TaskManagerEnhanced = () => {
               Trier par mots-clés
             </Button>
             <Button variant="outline" size="sm" onClick={exportToGoogleTasks}>
-              <FileExport className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4 mr-2" />
               Export Google Tasks
             </Button>
             <Button variant="outline" size="sm" onClick={exportToICalendar}>

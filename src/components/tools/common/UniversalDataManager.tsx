@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database } from 'lucide-react';
@@ -36,7 +35,7 @@ export const UniversalDataManager = () => {
   const [showTests, setShowTests] = useState(false);
   
   const loadingRef = useRef<boolean>(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Chargement des statistiques optimisé avec debounce
   const loadStats = useCallback(async () => {
@@ -81,13 +80,17 @@ export const UniversalDataManager = () => {
     
     // Rafraîchissement toutes les 2 minutes
     const interval = setInterval(() => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       timeoutRef.current = setTimeout(loadStats, 1000);
     }, 120000);
     
     return () => {
       clearInterval(interval);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, [loadStats]);
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database } from 'lucide-react';
@@ -61,7 +62,7 @@ export const UniversalDataManager = () => {
               lastUpdated: new Date().toISOString()
             };
             return acc;
-          }, {}) || {}
+          }, {} as Record<string, { itemCount: number; lastUpdated: string }>) || {}
         };
         
         setStats(mockStats);

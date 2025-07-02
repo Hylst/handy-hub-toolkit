@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -17,6 +16,7 @@ import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { HealthWellnessSuite } from "@/components/tools/HealthWellnessSuite";
 import { About } from "@/components/About";
 import { UniversalDataManager } from "@/components/tools/common/UniversalDataManager";
+import { AppSettings } from "@/components/tools/common/AppSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/UserMenu";
@@ -47,6 +47,7 @@ const Index = () => {
       case "health-wellness-suite": return "Suite Santé & Bien-être";
       case "text-utils-advanced": return "Utilitaires Texte Avancés";
       case "data-manager": return "Gestionnaire de Données";
+      case "settings": return "Paramètres";
       case "profile": return "Mon Profil";
       case "about": return "À propos";
       default: return "Boîte à Outils Pratiques";
@@ -79,6 +80,12 @@ const Index = () => {
         return <TextUtilsAdvanced />;
       case "data-manager":
         return <UniversalDataManager />;
+      case "settings":
+        return (
+          <div className="max-w-2xl mx-auto">
+            <AppSettings />
+          </div>
+        );
       case "profile":
         return <UserProfile />;
       case "about":

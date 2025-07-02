@@ -43,6 +43,7 @@ export const AppSidebar = ({ activeSection, setActiveSection }: AppSidebarProps)
     { id: "color-generator", label: "Créativité", icon: Palette },
     { id: "health-wellness-suite", label: "Santé", icon: Heart },
     { id: "text-utils-advanced", label: "Utilitaires Texte", icon: FileText },
+    { id: "settings", label: "Paramètres", icon: Settings },
     { id: "about", label: "À propos", icon: Info },
   ];
 

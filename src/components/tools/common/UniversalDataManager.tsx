@@ -50,19 +50,24 @@ export const UniversalDataManager = () => {
       ]);
       
       if (universalStats && storageStats) {
+        const toolsStats: Record<string, { itemCount: number; lastUpdated: string }> = {};
+        
+        if (universalStats.tools) {
+          universalStats.tools.forEach((tool: string) => {
+            toolsStats[tool] = {
+              itemCount: 1,
+              lastUpdated: new Date().toISOString()
+            };
+          });
+        }
+        
         const mockStats: AppStatistics = {
           totalTools: universalStats.tools?.length || 0,
           totalDataPoints: storageStats.totalRecords,
           storageUsed: storageStats.estimatedSize,
           storageQuota: 50 * 1024 * 1024,
           lastActivity: universalStats.lastActivity || new Date().toISOString(),
-          toolsStats: universalStats.tools?.reduce<Record<string, { itemCount: number; lastUpdated: string }>>((acc, tool) => {
-            acc[tool] = {
-              itemCount: 1,
-              lastUpdated: new Date().toISOString()
-            };
-            return acc;
-          }, {}) || {}
+          toolsStats
         };
         
         setStats(mockStats);

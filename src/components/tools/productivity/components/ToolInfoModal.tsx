@@ -160,7 +160,7 @@ export const ToolInfoModal: React.FC<ToolInfoModalProps> = ({ toolType }) => {
                     <span className="text-sm text-gray-700 dark:text-gray-300">{step}</span>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </CardContent>
           </Card>
 

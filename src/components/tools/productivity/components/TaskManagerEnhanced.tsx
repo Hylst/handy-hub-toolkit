@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { CheckSquare, Plus, Search, Filter, Trash2, Edit, Calendar, Flag, Tag } from 'lucide-react';
+import { CheckSquare, Plus, Search, Filter, Trash2, Edit, Calendar, Flag, Tag, Split, FileExport } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
 import { DataImportExport } from '../../common/DataImportExport';
+import { ToolInfoModal } from './ToolInfoModal';
 
 export const TaskManagerEnhanced = () => {
   const {
@@ -43,6 +44,8 @@ export const TaskManagerEnhanced = () => {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [keywordFilter, setKeywordFilter] = useState('');
+  const [sortByKeywords, setSortByKeywords] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -51,6 +54,93 @@ export const TaskManagerEnhanced = () => {
     tags: '',
     dueDate: ''
   });
+
+  // Analyser les mots-clés les plus fréquents
+  const getKeywordFrequency = () => {
+    const keywords: { [key: string]: number } = {};
+    tasks.forEach(task => {
+      task.tags.forEach(tag => {
+        keywords[tag] = (keywords[tag] || 0) + 1;
+      });
+      // Analyser aussi les mots du titre
+      task.title.toLowerCase().split(' ').forEach(word => {
+        if (word.length > 3) {
+          keywords[word] = (keywords[word] || 0) + 1;
+        }
+      });
+    });
+    return Object.entries(keywords)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 10);
+  };
+
+  const splitTaskIntoSubtasks = async (task: Task) => {
+    const subtaskTitles = task.description?.split('\n').filter(line => line.trim()) || [
+      `${task.title} - Partie 1`,
+      `${task.title} - Partie 2`
+    ];
+
+    for (let i = 0; i < subtaskTitles.length; i++) {
+      await addTask({
+        title: subtaskTitles[i],
+        description: `Sous-tâche de: ${task.title}`,
+        completed: false,
+        priority: task.priority,
+        category: task.category,
+        tags: [...task.tags, 'sous-tâche'],
+        dueDate: task.dueDate
+      });
+    }
+  };
+
+  // Export vers format Google Tasks
+  const exportToGoogleTasks = () => {
+    const googleTasksFormat = tasks.map(task => ({
+      title: task.title,
+      notes: task.description || '',
+      status: task.completed ? 'completed' : 'needsAction',
+      due: task.dueDate ? new Date(task.dueDate).toISOString() : undefined
+    }));
+
+    const blob = new Blob([JSON.stringify(googleTasksFormat, null, 2)], {
+      type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `google-tasks-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export vers format iCalendar
+  const exportToICalendar = () => {
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Outils Pratiques//Gestionnaire de Tâches//FR',
+      ...tasks.map(task => [
+        'BEGIN:VTODO',
+        `UID:${task.id}@outils-pratiques.com`,
+        `SUMMARY:${task.title}`,
+        task.description ? `DESCRIPTION:${task.description}` : '',
+        `STATUS:${task.completed ? 'COMPLETED' : 'NEEDS-ACTION'}`,
+        `PRIORITY:${task.priority === 'high' ? '1' : task.priority === 'medium' ? '5' : '9'}`,
+        task.dueDate ? `DUE:${new Date(task.dueDate).toISOString().replace(/[-:]/g, '').split('.')[0]}Z` : '',
+        `CATEGORIES:${task.category}`,
+        'END:VTODO'
+      ].filter(Boolean)).flat(),
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks-${new Date().toISOString().split('T')[0]}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleAddTask = async () => {
     if (!newTask.title.trim()) return;
@@ -132,13 +222,30 @@ export const TaskManagerEnhanced = () => {
     );
   }
 
+  const filteredTasks = tasks.filter(task => {
+    const matchesKeyword = !keywordFilter || 
+      task.tags.some(tag => tag.toLowerCase().includes(keywordFilter.toLowerCase())) ||
+      task.title.toLowerCase().includes(keywordFilter.toLowerCase());
+    return matchesKeyword;
+  });
+
+  const sortedTasks = sortByKeywords ? 
+    [...filteredTasks].sort((a, b) => {
+      const aKeywords = a.tags.length + a.title.split(' ').length;
+      const bKeywords = b.tags.length + b.title.split(' ').length;
+      return bKeywords - aKeywords;
+    }) : filteredTasks;
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <Card className="shadow-lg border-2">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50">
-          <CardTitle className="flex items-center gap-3 text-lg lg:text-xl">
-            <CheckSquare className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
-            Gestionnaire de Tâches Avancé
+          <CardTitle className="flex items-center justify-between text-lg lg:text-xl">
+            <div className="flex items-center gap-3">
+              <CheckSquare className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
+              Gestionnaire de Tâches Avancé
+            </div>
+            <ToolInfoModal toolType="tasks" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
@@ -164,8 +271,8 @@ export const TaskManagerEnhanced = () => {
 
           <Separator />
 
-          {/* Recherche et filtres */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          {/* Recherche et filtres avancés */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
               <Input
@@ -175,6 +282,11 @@ export const TaskManagerEnhanced = () => {
                 className="pl-10"
               />
             </div>
+            <Input
+              placeholder="Filtrer par mot-clé..."
+              value={keywordFilter}
+              onChange={(e) => setKeywordFilter(e.target.value)}
+            />
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Catégorie" />
@@ -209,6 +321,47 @@ export const TaskManagerEnhanced = () => {
             </Select>
           </div>
 
+          {/* Options avancées */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={sortByKeywords ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSortByKeywords(!sortByKeywords)}
+            >
+              <Tag className="w-4 h-4 mr-2" />
+              Trier par mots-clés
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportToGoogleTasks}>
+              <FileExport className="w-4 h-4 mr-2" />
+              Export Google Tasks
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportToICalendar}>
+              <Calendar className="w-4 h-4 mr-2" />
+              Export iCalendar
+            </Button>
+          </div>
+
+          {/* Mots-clés fréquents */}
+          {getKeywordFrequency().length > 0 && (
+            <Card className="bg-gray-50 dark:bg-gray-800/50">
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-2">Mots-clés les plus fréquents</h4>
+                <div className="flex flex-wrap gap-2">
+                  {getKeywordFrequency().map(([keyword, count]) => (
+                    <Badge
+                      key={keyword}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => setKeywordFilter(keyword)}
+                    >
+                      {keyword} ({count})
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Bouton d'ajout */}
           <Button 
             onClick={() => {
@@ -239,7 +392,7 @@ export const TaskManagerEnhanced = () => {
                   onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                 />
                 <Textarea
-                  placeholder="Description (optionnel)"
+                  placeholder="Description (optionnel) - Une ligne par sous-tâche pour découper"
                   value={newTask.description}
                   onChange={(e) => setNewTask({...newTask, description: e.target.value})}
                 />
@@ -275,37 +428,48 @@ export const TaskManagerEnhanced = () => {
                   value={newTask.tags}
                   onChange={(e) => setNewTask({...newTask, tags: e.target.value})}
                 />
-                <Button 
-                  onClick={editingTask ? handleUpdateTask : handleAddTask}
-                  disabled={!newTask.title.trim()}
-                  className="w-full"
-                >
-                  {editingTask ? 'Mettre à jour' : 'Ajouter'} la tâche
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={editingTask ? handleUpdateTask : handleAddTask}
+                    disabled={!newTask.title.trim()}
+                    className="flex-1"
+                  >
+                    {editingTask ? 'Mettre à jour' : 'Ajouter'} la tâche
+                  </Button>
+                  {editingTask && newTask.description && (
+                    <Button
+                      variant="outline"
+                      onClick={() => splitTaskIntoSubtasks(editingTask)}
+                    >
+                      <Split className="w-4 h-4 mr-2" />
+                      Découper
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
 
           {/* Liste des tâches */}
           <div className="space-y-3">
-            {tasks.length === 0 ? (
+            {sortedTasks.length === 0 ? (
               <div className="text-center py-8 lg:py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <CheckSquare className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-4 text-gray-400" />
                 <p className="text-base lg:text-lg text-gray-600 dark:text-gray-400 mb-2">
-                  {searchTerm || filterCategory !== 'all' || filterPriority !== 'all' || filterStatus !== 'all'
+                  {searchTerm || keywordFilter || filterCategory !== 'all' || filterPriority !== 'all' || filterStatus !== 'all'
                     ? 'Aucune tâche ne correspond aux filtres'
                     : 'Aucune tâche créée'
                   }
                 </p>
                 <p className="text-sm text-gray-500">
-                  {searchTerm || filterCategory !== 'all' || filterPriority !== 'all' || filterStatus !== 'all'
+                  {searchTerm || keywordFilter || filterCategory !== 'all' || filterPriority !== 'all' || filterStatus !== 'all'
                     ? 'Modifiez vos critères de recherche'
                     : 'Commencez par ajouter votre première tâche'
                   }
                 </p>
               </div>
             ) : (
-              tasks.map(task => (
+              sortedTasks.map(task => (
                 <Card key={task.id} className={`border-2 transition-all hover:shadow-md ${
                   task.completed ? 'bg-gray-50 dark:bg-gray-800/50' : 'bg-white dark:bg-gray-800'
                 }`}>
@@ -328,6 +492,9 @@ export const TaskManagerEnhanced = () => {
                               {getPriorityIcon(task.priority)} {task.priority}
                             </Badge>
                             <Badge variant="outline">{task.category}</Badge>
+                            {task.tags.includes('sous-tâche') && (
+                              <Badge variant="secondary">Sous-tâche</Badge>
+                            )}
                           </div>
                         </div>
                         

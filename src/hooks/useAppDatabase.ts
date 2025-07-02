@@ -1,10 +1,9 @@
-
 import { useIndexedDBManager } from './useIndexedDBManager';
 
 // Configuration complète de la base de données pour tous les outils
 const APP_DATABASE_CONFIG = {
   dbName: 'ToolsAppDatabase',
-  version: 1,
+  version: 11, // Augmentation de la version pour résoudre le conflit
   stores: [
     // Productivité
     {
@@ -12,7 +11,8 @@ const APP_DATABASE_CONFIG = {
       keyPath: 'id',
       indexes: [
         { name: 'timestamp', keyPath: 'timestamp' },
-        { name: 'tool', keyPath: 'tool' }
+        { name: 'tool', keyPath: 'tool' },
+        { name: 'keywords', keyPath: 'keywords', multiEntry: true }
       ]
     },
     {
@@ -20,7 +20,8 @@ const APP_DATABASE_CONFIG = {
       keyPath: 'id',
       indexes: [
         { name: 'timestamp', keyPath: 'timestamp' },
-        { name: 'tool', keyPath: 'tool' }
+        { name: 'tool', keyPath: 'tool' },
+        { name: 'status', keyPath: 'status' }
       ]
     },
     {
@@ -28,7 +29,8 @@ const APP_DATABASE_CONFIG = {
       keyPath: 'id',
       indexes: [
         { name: 'timestamp', keyPath: 'timestamp' },
-        { name: 'tool', keyPath: 'tool' }
+        { name: 'tool', keyPath: 'tool' },
+        { name: 'backgroundColor', keyPath: 'backgroundColor' }
       ]
     },
     {
@@ -36,7 +38,8 @@ const APP_DATABASE_CONFIG = {
       keyPath: 'id',
       indexes: [
         { name: 'timestamp', keyPath: 'timestamp' },
-        { name: 'tool', keyPath: 'tool' }
+        { name: 'tool', keyPath: 'tool' },
+        { name: 'preset', keyPath: 'preset' }
       ]
     },
     // Générateurs et Utilitaires

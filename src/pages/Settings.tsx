@@ -7,37 +7,35 @@ import { LLMSettings } from '@/components/tools/productivity/components/LLMSetti
 
 const Settings = () => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* En-tête simplifié */}
-        <Card className="border-2 border-blue-200 dark:border-blue-800">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-3 text-xl">
-              <SettingsIcon className="w-5 h-5 text-blue-600" />
-              Paramètres Utilisateur
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Gérez vos préférences personnelles
-            </p>
-          </CardHeader>
-        </Card>
+    <div className="space-y-6 p-4">
+      {/* En-tête simplifié */}
+      <Card className="border-2 border-blue-200 dark:border-blue-800">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center gap-3 text-xl">
+            <SettingsIcon className="w-5 h-5 text-blue-600" />
+            Paramètres Utilisateur
+          </CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Gérez vos préférences personnelles
+          </p>
+        </CardHeader>
+      </Card>
 
-        {/* Paramètres de l'application */}
-        <AppSettings />
+      {/* Paramètres de l'application */}
+      <AppSettings />
 
-        {/* Configuration des modèles LLM */}
-        <LLMSettings />
+      {/* Configuration des modèles LLM */}
+      <LLMSettings />
 
-        {/* Note d'information */}
-        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-          <CardContent className="p-4">
-            <div className="text-sm text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">💡 Conseil</p>
-              <p>Pour gérer vos données et effectuer des exports/imports complets, utilisez le "Gestionnaire de Données" accessible depuis le menu principal.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Note d'information */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <CardContent className="p-4">
+          <div className="text-sm text-blue-700 dark:text-blue-300">
+            <p className="font-medium mb-1">💡 Conseil</p>
+            <p>Pour gérer vos données et effectuer des exports/imports complets, utilisez le "Gestionnaire de Données" accessible depuis le menu principal.</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

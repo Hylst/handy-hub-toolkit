@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckSquare, Plus, Settings } from 'lucide-react';
+import { CheckSquare, Plus } from 'lucide-react';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
 import { DataImportExport } from '../../common/DataImportExport';
 import { ToolInfoModal } from './ToolInfoModal';
@@ -13,7 +12,6 @@ import { TaskFilters } from './TaskFilters';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
-import { LLMSettings } from './LLMSettings';
 
 export const TaskManagerEnhanced = () => {
   const {
@@ -47,7 +45,6 @@ export const TaskManagerEnhanced = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [keywordFilter, setKeywordFilter] = useState('');
   const [sortByKeywords, setSortByKeywords] = useState(false);
-  const [showLLMSettings, setShowLLMSettings] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -195,17 +192,7 @@ export const TaskManagerEnhanced = () => {
               <CheckSquare className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
               Gestionnaire de Tâches Avancé
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLLMSettings(true)}
-                title="Configuration LLM"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-              <ToolInfoModal toolType="tasks" />
-            </div>
+            <ToolInfoModal toolType="tasks" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
@@ -262,7 +249,6 @@ export const TaskManagerEnhanced = () => {
               onSubmit={editingTask ? handleUpdateTask : handleAddTask}
               onSplit={editingTask ? handleSplitTask : undefined}
               onAIDecompose={handleAIDecomposition}
-              onShowLLMSettings={() => setShowLLMSettings(true)}
             />
           )}
 
@@ -293,16 +279,6 @@ export const TaskManagerEnhanced = () => {
         onExportGoogleTasks={exportToGoogleTasks}
         onExportICalendar={exportToICalendar}
       />
-
-      {/* Dialog pour les paramètres LLM */}
-      <Dialog open={showLLMSettings} onOpenChange={setShowLLMSettings}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Configuration des Modèles LLM</DialogTitle>
-          </DialogHeader>
-          <LLMSettings />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

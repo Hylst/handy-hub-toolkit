@@ -22,36 +22,36 @@ const LLM_PROVIDERS: LLMProvider[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+    models: ['gpt-4o', 'gpt-4-turbo'],
     apiKeyLabel: 'OpenAI API Key',
   },
   {
     id: 'anthropic',
-    name: 'Anthropic',
-    models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
+    name: 'Anthropic (Claude)',
+    models: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
     apiKeyLabel: 'Anthropic API Key',
   },
   {
     id: 'google',
     name: 'Google',
-    models: ['gemini-pro', 'gemini-pro-vision'],
+    models: ['gemini-2.0-flash-exp', 'gemini-1.5-pro-latest'],
     apiKeyLabel: 'Google API Key',
   },
   {
     id: 'deepseek',
     name: 'DeepSeek',
-    models: ['deepseek-chat', 'deepseek-coder'],
+    models: ['deepseek-chat', 'deepseek-reasoner'],
     apiKeyLabel: 'DeepSeek API Key',
   },
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    models: ['openrouter/auto', 'anthropic/claude-3-sonnet'],
+    models: ['deepseek/deepseek-r1', 'google/gemini-2.0-flash-exp:free'],
     apiKeyLabel: 'OpenRouter API Key',
   },
   {
     id: 'xgrok',
-    name: 'X/Grok',
+    name: 'X / Grok',
     models: ['grok-beta', 'grok-vision-beta'],
     apiKeyLabel: 'X/Grok API Key',
   },
@@ -109,6 +109,7 @@ export const LLMSettings = () => {
 
     setIsLoading(true);
     try {
+      // Sauvegarder dans Supabase
       const { error } = await supabase
         .from('user_llm_api_keys')
         .insert({
@@ -120,9 +121,14 @@ export const LLMSettings = () => {
 
       if (error) throw error;
 
+      // Sauvegarder en localStorage pour persistance locale
+      const localKeys = JSON.parse(localStorage.getItem('llm_api_keys') || '{}');
+      localKeys[selectedProvider] = newApiKey;
+      localStorage.setItem('llm_api_keys', JSON.stringify(localKeys));
+
       toast({
         title: "Clé API sauvegardée",
-        description: "La clé API a été ajoutée avec succès",
+        description: "La clé API a été sauvegardée dans Supabase et en local",
       });
 
       setNewApiKey('');
@@ -142,27 +148,167 @@ export const LLMSettings = () => {
 
   const testApiKey = async (keyId: string, provider: string, apiKey: string) => {
     setTestingKey(keyId);
+    const testPrompt = "Bonjour, pouvez-vous me répondre brièvement pour tester la connexion ?";
+    
     try {
-      // Test simple selon le fournisseur
       let testResult = false;
+      let response = '';
+      let error = '';
       
       if (provider === 'openai') {
-        const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` },
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: testPrompt }],
+            max_tokens: 50
+          })
         });
-        testResult = response.ok;
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.choices[0]?.message?.content || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
+      } else if (provider === 'anthropic') {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json',
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 50,
+            messages: [{ role: 'user', content: testPrompt }]
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.content[0]?.text || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
+      } else if (provider === 'deepseek') {
+        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: testPrompt }],
+            max_tokens: 50
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.choices[0]?.message?.content || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
+      } else if (provider === 'openrouter') {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': window.location.origin,
+          },
+          body: JSON.stringify({
+            model: 'deepseek/deepseek-r1',
+            messages: [{ role: 'user', content: testPrompt }],
+            max_tokens: 50
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.choices[0]?.message?.content || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
+      } else if (provider === 'google') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: testPrompt }] }]
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.candidates[0]?.content?.parts[0]?.text || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
+      } else if (provider === 'xgrok') {
+        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'grok-beta',
+            messages: [{ role: 'user', content: testPrompt }],
+            max_tokens: 50
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          response = data.choices[0]?.message?.content || 'Réponse vide';
+          testResult = true;
+        } else {
+          const errorData = await res.json();
+          error = errorData.error?.message || `Erreur HTTP ${res.status}`;
+        }
       }
-      // Ajouter d'autres tests selon les fournisseurs
       
       toast({
-        title: testResult ? "Test réussi" : "Test échoué",
-        description: testResult ? "La clé API fonctionne correctement" : "La clé API semble invalide",
+        title: testResult ? "✅ Test réussi" : "❌ Test échoué",
+        description: (
+          <div className="space-y-2 text-xs">
+            <div><strong>Prompt:</strong> {testPrompt}</div>
+            {testResult ? (
+              <div><strong>Réponse:</strong> {response}</div>
+            ) : (
+              <div><strong>Erreur:</strong> {error}</div>
+            )}
+          </div>
+        ),
         variant: testResult ? "default" : "destructive",
       });
     } catch (error) {
       toast({
-        title: "Erreur de test",
-        description: "Impossible de tester la clé API",
+        title: "❌ Erreur de test",
+        description: (
+          <div className="space-y-2 text-xs">
+            <div><strong>Prompt:</strong> {testPrompt}</div>
+            <div><strong>Erreur:</strong> {error instanceof Error ? error.message : 'Erreur inconnue'}</div>
+          </div>
+        ),
         variant: "destructive",
       });
     } finally {
@@ -170,7 +316,7 @@ export const LLMSettings = () => {
     }
   };
 
-  const deleteApiKey = async (keyId: string) => {
+  const deleteApiKey = async (keyId: string, provider: string) => {
     try {
       const { error } = await supabase
         .from('user_llm_api_keys')
@@ -179,9 +325,14 @@ export const LLMSettings = () => {
 
       if (error) throw error;
 
+      // Supprimer du localStorage aussi
+      const localKeys = JSON.parse(localStorage.getItem('llm_api_keys') || '{}');
+      delete localKeys[provider];
+      localStorage.setItem('llm_api_keys', JSON.stringify(localKeys));
+
       toast({
         title: "Clé supprimée",
-        description: "La clé API a été supprimée",
+        description: "La clé API a été supprimée de Supabase et du stockage local",
       });
 
       await loadApiKeys();
@@ -356,7 +507,7 @@ export const LLMSettings = () => {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deleteApiKey(key.id)}
+                    onClick={() => deleteApiKey(key.id, key.provider)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -368,12 +519,13 @@ export const LLMSettings = () => {
 
         {/* Informations */}
         <div className="p-4 bg-blue-50 rounded-lg">
-          <h5 className="font-medium text-blue-800 mb-2">💡 Conseils</h5>
+          <h5 className="font-medium text-blue-800 mb-2">💡 Conseils & Stockage</h5>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Les clés API sont stockées de manière sécurisée dans votre compte</li>
+            <li>• Les clés API sont stockées de manière sécurisée dans <strong>Supabase + localStorage</strong></li>
             <li>• Utilisez le bouton "Tester" pour vérifier que vos clés fonctionnent</li>
             <li>• Le modèle par défaut sera utilisé pour la décomposition automatique de tâches</li>
             <li>• Vous pouvez configurer plusieurs fournisseurs et choisir celui par défaut</li>
+            <li>• Les données sont persistantes même hors ligne (localStorage)</li>
           </ul>
         </div>
       </CardContent>

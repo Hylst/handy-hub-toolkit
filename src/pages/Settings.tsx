@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { AppSettings } from '@/components/tools/common/AppSettings';
+import { LLMSettings } from '@/components/tools/productivity/components/LLMSettings';
 
 const Settings = () => {
   return (
@@ -21,8 +22,11 @@ const Settings = () => {
           </CardHeader>
         </Card>
 
-        {/* Paramètres de l'application uniquement */}
+        {/* Paramètres de l'application */}
         <AppSettings />
+
+        {/* Configuration des modèles LLM */}
+        <LLMSettings />
 
         {/* Note d'information */}
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">

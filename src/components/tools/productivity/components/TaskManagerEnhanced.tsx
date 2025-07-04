@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckSquare, Plus, Settings } from 'lucide-react';
+import { CheckSquare, Plus } from 'lucide-react';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
 import { DataImportExport } from '../../common/DataImportExport';
 import { ToolInfoModal } from './ToolInfoModal';
@@ -195,17 +195,7 @@ export const TaskManagerEnhanced = () => {
               <CheckSquare className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
               Gestionnaire de Tâches Avancé
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLLMSettings(true)}
-                title="Configuration LLM"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-              <ToolInfoModal toolType="tasks" />
-            </div>
+            <ToolInfoModal toolType="tasks" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">

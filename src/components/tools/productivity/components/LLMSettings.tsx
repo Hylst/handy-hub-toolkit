@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,13 +21,13 @@ const LLM_PROVIDERS: LLMProvider[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4-turbo'],
+    models: ['gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini'],
     apiKeyLabel: 'OpenAI API Key',
   },
   {
     id: 'anthropic',
     name: 'Anthropic (Claude)',
-    models: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+    models: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-5-haiku-20241022'],
     apiKeyLabel: 'Anthropic API Key',
   },
   {
@@ -46,7 +45,7 @@ const LLM_PROVIDERS: LLMProvider[] = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    models: ['deepseek/deepseek-r1', 'google/gemini-2.0-flash-exp:free'],
+    models: ['deepseek/deepseek-r1', 'google/gemini-2.0-flash-exp:free', 'anthropic/claude-3.5-sonnet'],
     apiKeyLabel: 'OpenRouter API Key',
   },
   {
@@ -62,6 +61,7 @@ interface APIKey {
   provider: string;
   api_key: string;
   is_default: boolean;
+  selected_model: string | null;
   created_at: string;
 }
 
@@ -116,6 +116,7 @@ export const LLMSettings = () => {
           user_id: user?.id,
           provider: selectedProvider,
           api_key: newApiKey,
+          selected_model: selectedModel || null,
           is_default: apiKeys.length === 0, // Premier ajout = défaut
         });
 
@@ -133,6 +134,7 @@ export const LLMSettings = () => {
 
       setNewApiKey('');
       setSelectedProvider('');
+      setSelectedModel('');
       await loadApiKeys();
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
@@ -143,6 +145,31 @@ export const LLMSettings = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateSelectedModel = async (keyId: string, model: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_llm_api_keys')
+        .update({ selected_model: model })
+        .eq('id', keyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Modèle mis à jour",
+        description: "Le modèle sélectionné a été sauvegardé",
+      });
+
+      await loadApiKeys();
+    } catch (error) {
+      console.error('Erreur mise à jour modèle:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le modèle",
+        variant: "destructive",
+      });
     }
   };
 
@@ -391,6 +418,10 @@ export const LLMSettings = () => {
     return LLM_PROVIDERS.find(p => p.id === selectedProvider)?.models || [];
   };
 
+  const getProviderModels = (providerId: string) => {
+    return LLM_PROVIDERS.find(p => p.id === providerId)?.models || [];
+  };
+
   if (!user) {
     return (
       <Card>
@@ -417,7 +448,7 @@ export const LLMSettings = () => {
         <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
           <h4 className="font-medium">Ajouter une nouvelle clé API</h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select value={selectedProvider} onValueChange={setSelectedProvider}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un fournisseur" />
@@ -426,6 +457,19 @@ export const LLMSettings = () => {
                 {LLM_PROVIDERS.map(provider => (
                   <SelectItem key={provider.id} value={provider.id}>
                     {provider.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Modèle (optionnel)" />
+              </SelectTrigger>
+              <SelectContent>
+                {getAvailableModels().map(model => (
+                  <SelectItem key={model} value={model}>
+                    {model}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -459,8 +503,8 @@ export const LLMSettings = () => {
           ) : (
             apiKeys.map(key => (
               <div key={key.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{getProviderName(key.provider)}</span>
                       {key.is_default && (
@@ -478,6 +522,23 @@ export const LLMSettings = () => {
                       >
                         {showApiKey[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
+                    </div>
+                    <div className="mt-2">
+                      <Select 
+                        value={key.selected_model || ''} 
+                        onValueChange={(model) => updateSelectedModel(key.id, model)}
+                      >
+                        <SelectTrigger className="w-full max-w-xs">
+                          <SelectValue placeholder="Sélectionner un modèle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getProviderModels(key.provider).map(model => (
+                            <SelectItem key={model} value={model}>
+                              {model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
@@ -526,6 +587,7 @@ export const LLMSettings = () => {
             <li>• Le modèle par défaut sera utilisé pour la décomposition automatique de tâches</li>
             <li>• Vous pouvez configurer plusieurs fournisseurs et choisir celui par défaut</li>
             <li>• Les données sont persistantes même hors ligne (localStorage)</li>
+            <li>• Sélectionnez un modèle spécifique pour each fournisseur</li>
           </ul>
         </div>
       </CardContent>

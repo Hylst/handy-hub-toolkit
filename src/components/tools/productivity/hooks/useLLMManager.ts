@@ -9,6 +9,7 @@ interface LLMProvider {
   provider: string;
   api_key: string;
   is_default: boolean;
+  selected_model: string | null;
 }
 
 interface DecompositionRequest {
@@ -58,7 +59,8 @@ export const useLLMManager = () => {
             id: 'local',
             provider: firstProvider,
             api_key: localKeys[firstProvider],
-            is_default: true
+            is_default: true,
+            selected_model: null
           });
         }
       }
@@ -73,7 +75,8 @@ export const useLLMManager = () => {
           id: 'local',
           provider: firstProvider,
           api_key: localKeys[firstProvider],
-          is_default: true
+          is_default: true,
+          selected_model: null
         });
       }
     }
@@ -103,17 +106,17 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       let subtasks: string[] = [];
 
       if (defaultProvider.provider === 'openai') {
-        subtasks = await callOpenAI(defaultProvider.api_key, prompt);
+        subtasks = await callOpenAI(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'anthropic') {
-        subtasks = await callAnthropic(defaultProvider.api_key, prompt);
+        subtasks = await callAnthropic(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'google') {
-        subtasks = await callGoogle(defaultProvider.api_key, prompt);
+        subtasks = await callGoogle(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'deepseek') {
-        subtasks = await callDeepSeek(defaultProvider.api_key, prompt);
+        subtasks = await callDeepSeek(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'openrouter') {
-        subtasks = await callOpenRouter(defaultProvider.api_key, prompt);
+        subtasks = await callOpenRouter(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'xgrok') {
-        subtasks = await callXGrok(defaultProvider.api_key, prompt);
+        subtasks = await callXGrok(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else {
         throw new Error(`Fournisseur ${defaultProvider.provider} non supporté`);
       }
@@ -134,7 +137,9 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
     }
   }, [defaultProvider]);
 
-  const callOpenAI = async (apiKey: string, prompt: string): Promise<string[]> => {
+  const callOpenAI = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'gpt-4o';
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -142,7 +147,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model,
         messages: [
           {
             role: 'system',
@@ -172,7 +177,9 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callAnthropic = async (apiKey: string, prompt: string): Promise<string[]> => {
+  const callAnthropic = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'claude-3-5-sonnet-20241022';
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -181,7 +188,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model,
         max_tokens: 500,
         messages: [
           {
@@ -206,8 +213,10 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callGoogle = async (apiKey: string, prompt: string): Promise<string[]> => {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+  const callGoogle = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'gemini-2.0-flash-exp';
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -243,7 +252,9 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callDeepSeek = async (apiKey: string, prompt: string): Promise<string[]> => {
+  const callDeepSeek = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'deepseek-chat';
+    
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -251,7 +262,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model,
         messages: [
           {
             role: 'system',
@@ -281,7 +292,9 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callOpenRouter = async (apiKey: string, prompt: string): Promise<string[]> => {
+  const callOpenRouter = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'deepseek/deepseek-r1';
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -290,7 +303,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'HTTP-Referer': window.location.origin,
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-r1',
+        model,
         messages: [
           {
             role: 'system',
@@ -320,7 +333,9 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callXGrok = async (apiKey: string, prompt: string): Promise<string[]> => {
+  const callXGrok = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+    const model = selectedModel || 'grok-beta';
+    
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -328,7 +343,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-beta',
+        model,
         messages: [
           {
             role: 'system',

@@ -148,6 +148,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           provider: string
+          selected_model: string | null
           updated_at: string
           user_id: string
         }
@@ -157,6 +158,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           provider: string
+          selected_model?: string | null
           updated_at?: string
           user_id: string
         }
@@ -166,6 +168,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           provider?: string
+          selected_model?: string | null
           updated_at?: string
           user_id?: string
         }

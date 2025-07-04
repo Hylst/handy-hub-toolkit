@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CheckSquare, Plus } from 'lucide-react';
 import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
 import { DataImportExport } from '../../common/DataImportExport';
@@ -13,7 +12,6 @@ import { TaskFilters } from './TaskFilters';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
-import { LLMSettings } from './LLMSettings';
 
 export const TaskManagerEnhanced = () => {
   const {
@@ -47,7 +45,6 @@ export const TaskManagerEnhanced = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [keywordFilter, setKeywordFilter] = useState('');
   const [sortByKeywords, setSortByKeywords] = useState(false);
-  const [showLLMSettings, setShowLLMSettings] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -252,7 +249,6 @@ export const TaskManagerEnhanced = () => {
               onSubmit={editingTask ? handleUpdateTask : handleAddTask}
               onSplit={editingTask ? handleSplitTask : undefined}
               onAIDecompose={handleAIDecomposition}
-              onShowLLMSettings={() => setShowLLMSettings(true)}
             />
           )}
 
@@ -283,16 +279,6 @@ export const TaskManagerEnhanced = () => {
         onExportGoogleTasks={exportToGoogleTasks}
         onExportICalendar={exportToICalendar}
       />
-
-      {/* Dialog pour les paramètres LLM */}
-      <Dialog open={showLLMSettings} onOpenChange={setShowLLMSettings}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Configuration des Modèles LLM</DialogTitle>
-          </DialogHeader>
-          <LLMSettings />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

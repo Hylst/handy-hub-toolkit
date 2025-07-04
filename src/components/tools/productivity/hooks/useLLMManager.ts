@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +9,6 @@ interface LLMProvider {
   provider: string;
   api_key: string;
   is_default: boolean;
-  model?: string;
 }
 
 interface DecompositionRequest {
@@ -22,16 +22,6 @@ interface DecompositionResult {
   subtasks: string[];
   error?: string;
 }
-
-// Définitions des modèles disponibles par fournisseur
-const PROVIDER_MODELS = {
-  openai: ['gpt-4o', 'gpt-4-turbo'],
-  anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
-  google: ['gemini-2.0-flash-exp', 'gemini-1.5-pro-latest'],
-  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
-  openrouter: ['deepseek/deepseek-r1', 'google/gemini-2.0-flash-exp:free'],
-  xgrok: ['grok-beta', 'grok-vision-beta']
-};
 
 export const useLLMManager = () => {
   const { user } = useAuth();
@@ -64,13 +54,11 @@ export const useLLMManager = () => {
         const localKeys = JSON.parse(localStorage.getItem('llm_api_keys') || '{}');
         if (Object.keys(localKeys).length > 0) {
           const firstProvider = Object.keys(localKeys)[0];
-          const defaultModel = PROVIDER_MODELS[firstProvider as keyof typeof PROVIDER_MODELS]?.[0] || 'default-model';
           setDefaultProvider({
             id: 'local',
             provider: firstProvider,
             api_key: localKeys[firstProvider],
-            is_default: true,
-            model: defaultModel
+            is_default: true
           });
         }
       }
@@ -81,13 +69,11 @@ export const useLLMManager = () => {
       const localKeys = JSON.parse(localStorage.getItem('llm_api_keys') || '{}');
       if (Object.keys(localKeys).length > 0) {
         const firstProvider = Object.keys(localKeys)[0];
-        const defaultModel = PROVIDER_MODELS[firstProvider as keyof typeof PROVIDER_MODELS]?.[0] || 'default-model';
         setDefaultProvider({
           id: 'local',
           provider: firstProvider,
           api_key: localKeys[firstProvider],
-          is_default: true,
-          model: defaultModel
+          is_default: true
         });
       }
     }
@@ -117,17 +103,17 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       let subtasks: string[] = [];
 
       if (defaultProvider.provider === 'openai') {
-        subtasks = await callOpenAI(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callOpenAI(defaultProvider.api_key, prompt);
       } else if (defaultProvider.provider === 'anthropic') {
-        subtasks = await callAnthropic(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callAnthropic(defaultProvider.api_key, prompt);
       } else if (defaultProvider.provider === 'google') {
-        subtasks = await callGoogle(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callGoogle(defaultProvider.api_key, prompt);
       } else if (defaultProvider.provider === 'deepseek') {
-        subtasks = await callDeepSeek(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callDeepSeek(defaultProvider.api_key, prompt);
       } else if (defaultProvider.provider === 'openrouter') {
-        subtasks = await callOpenRouter(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callOpenRouter(defaultProvider.api_key, prompt);
       } else if (defaultProvider.provider === 'xgrok') {
-        subtasks = await callXGrok(defaultProvider.api_key, prompt, defaultProvider.model);
+        subtasks = await callXGrok(defaultProvider.api_key, prompt);
       } else {
         throw new Error(`Fournisseur ${defaultProvider.provider} non supporté`);
       }
@@ -148,8 +134,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
     }
   }, [defaultProvider]);
 
-  const callOpenAI = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.openai[0];
+  const callOpenAI = async (apiKey: string, prompt: string): Promise<string[]> => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -157,7 +142,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -187,8 +172,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callAnthropic = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.anthropic[0];
+  const callAnthropic = async (apiKey: string, prompt: string): Promise<string[]> => {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -197,7 +181,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 500,
         messages: [
           {
@@ -222,9 +206,8 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callGoogle = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.google[0];
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+  const callGoogle = async (apiKey: string, prompt: string): Promise<string[]> => {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -260,8 +243,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callDeepSeek = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.deepseek[0];
+  const callDeepSeek = async (apiKey: string, prompt: string): Promise<string[]> => {
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -269,7 +251,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'deepseek-chat',
         messages: [
           {
             role: 'system',
@@ -299,8 +281,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callOpenRouter = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.openrouter[0];
+  const callOpenRouter = async (apiKey: string, prompt: string): Promise<string[]> => {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -309,7 +290,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'HTTP-Referer': window.location.origin,
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'deepseek/deepseek-r1',
         messages: [
           {
             role: 'system',
@@ -339,8 +320,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
       .filter((line: string) => line.length > 0);
   };
 
-  const callXGrok = async (apiKey: string, prompt: string, model?: string): Promise<string[]> => {
-    const selectedModel = model || PROVIDER_MODELS.xgrok[0];
+  const callXGrok = async (apiKey: string, prompt: string): Promise<string[]> => {
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -348,7 +328,7 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'grok-beta',
         messages: [
           {
             role: 'system',
@@ -385,6 +365,5 @@ Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numéro
     isLoading,
     hasConfiguredProvider: !!defaultProvider,
     reloadProviders: loadProviders,
-    availableModels: PROVIDER_MODELS,
   };
 };

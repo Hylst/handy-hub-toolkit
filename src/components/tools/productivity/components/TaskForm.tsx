@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,16 +39,20 @@ export const TaskForm = ({
   onAIDecompose
 }: TaskFormProps) => {
   const [isDecomposing, setIsDecomposing] = useState(false);
-  const { decomposeTask, isLoading: isLLMLoading } = useLLMManager();
+  const { decomposeTaskWithAI, isLoading: isLLMLoading } = useLLMManager();
 
   const handleAIDecompose = async () => {
     if (!newTask.title.trim()) return;
 
     setIsDecomposing(true);
     try {
-      const subtasks = await decomposeTask(newTask.title, newTask.description);
-      if (subtasks && subtasks.length > 0) {
-        await onAIDecompose(subtasks);
+      const result = await decomposeTaskWithAI({
+        taskTitle: newTask.title,
+        taskDescription: newTask.description
+      });
+      
+      if (result.success && result.subtasks.length > 0) {
+        await onAIDecompose(result.subtasks);
       }
     } catch (error) {
       console.error('Erreur décomposition IA:', error);

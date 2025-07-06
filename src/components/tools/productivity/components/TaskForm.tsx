@@ -11,6 +11,12 @@ import { Plus, Scissors, Sparkles, Calendar, Tag, AlertCircle, Clock } from 'luc
 import { useLLMManager } from '../hooks/useLLMManager';
 import { Task } from '../hooks/useTaskManagerEnhanced';
 
+interface SubtaskData {
+  title: string;
+  description: string;
+  estimatedDuration?: number;
+}
+
 interface TaskFormProps {
   isEditing: boolean;
   editingTask: Task | null;
@@ -27,7 +33,7 @@ interface TaskFormProps {
   categories: string[];
   onSubmit: () => void;
   onSplit?: () => void;
-  onAIDecompose: (subtasks: string[]) => void;
+  onAIDecompose: (subtasks: SubtaskData[]) => void;
 }
 
 export const TaskForm = ({

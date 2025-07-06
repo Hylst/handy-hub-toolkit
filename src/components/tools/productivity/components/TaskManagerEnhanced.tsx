@@ -12,6 +12,12 @@ import { KeywordAnalysis } from './KeywordAnalysis';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 
+interface SubtaskData {
+  title: string;
+  description: string;
+  estimatedDuration?: number;
+}
+
 export const TaskManagerEnhanced = () => {
   const {
     tasks,
@@ -55,7 +61,7 @@ export const TaskManagerEnhanced = () => {
     estimatedDuration: ''
   });
 
-  const handleAIDecomposition = async (subtasks: any[]) => {
+  const handleAIDecomposition = async (subtasks: SubtaskData[]) => {
     const baseTask = {
       description: `Tâche parente: ${newTask.title}`,
       completed: false,

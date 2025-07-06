@@ -1,9 +1,10 @@
+
 import { useIndexedDBManager } from './useIndexedDBManager';
 
 // Configuration complète de la base de données pour tous les outils
 const APP_DATABASE_CONFIG = {
   dbName: 'ToolsAppDatabase',
-  version: 11, // Augmentation de la version pour résoudre le conflit
+  version: 12, // Augmentation de la version pour résoudre le conflit
   stores: [
     // Productivité
     {
@@ -77,6 +78,24 @@ const APP_DATABASE_CONFIG = {
     },
     {
       name: 'date-calculator-history',
+      keyPath: 'id',
+      indexes: [
+        { name: 'timestamp', keyPath: 'timestamp' },
+        { name: 'tool', keyPath: 'tool' }
+      ]
+    },
+    // Utilitaires texte avancés - NOUVEAU STORE AJOUTÉ
+    {
+      name: 'text-utils-advanced',
+      keyPath: 'id',
+      indexes: [
+        { name: 'timestamp', keyPath: 'timestamp' },
+        { name: 'tool', keyPath: 'tool' }
+      ]
+    },
+    // Santé et bien-être - NOUVEAU STORE AJOUTÉ
+    {
+      name: 'health-wellness-suite',
       keyPath: 'id',
       indexes: [
         { name: 'timestamp', keyPath: 'timestamp' },

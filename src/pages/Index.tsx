@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { UserProfile } from "@/components/UserProfile";
@@ -32,8 +32,19 @@ import { ToolCard } from "@/components/ui/tool-card";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
+  const [searchParams] = useSearchParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Gérer la navigation via URL params (depuis Settings)
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section) {
+      setActiveSection(section);
+      // Nettoyer l'URL après avoir mis à jour l'état
+      navigate('/', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const getSectionTitle = () => {
     switch (activeSection) {

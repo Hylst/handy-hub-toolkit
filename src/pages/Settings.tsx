@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -15,12 +15,21 @@ import { Container } from "@/components/ui/container";
 import { Heading } from "@/components/ui/heading";
 
 const Settings = () => {
+  // Utilisation d'un état fixe pour les paramètres
   const [activeSection, setActiveSection] = useState("settings");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  // Rediriger vers la page principale quand on clique sur d'autres sections
+  const handleSectionChange = (section: string) => {
+    if (section !== "settings") {
+      // Naviguer vers la page principale avec la section demandée
+      navigate(`/?section=${section}`);
+    }
+  };
+
   const handleProfileClick = () => {
-    setActiveSection("profile");
+    navigate("/?section=profile");
   };
 
   if (loading) {
@@ -38,7 +47,7 @@ const Settings = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
-          <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          <AppSidebar activeSection={activeSection} setActiveSection={handleSectionChange} />
           
           <SidebarInset>
             {/* Header */}

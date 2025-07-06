@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ export const TaskManagerEnhanced = () => {
     updateTask,
     deleteTask,
     toggleTask,
+    splitTaskIntoSubtasks,
     searchTerm,
     setSearchTerm,
     filterCategory,
@@ -51,29 +51,11 @@ export const TaskManagerEnhanced = () => {
     priority: 'medium' as Task['priority'],
     category: '',
     tags: '',
-    dueDate: ''
+    dueDate: '',
+    estimatedDuration: ''
   });
 
-  const splitTaskIntoSubtasks = async (task: Task) => {
-    const subtaskTitles = task.description?.split('\n').filter(line => line.trim()) || [
-      `${task.title} - Partie 1`,
-      `${task.title} - Partie 2`
-    ];
-
-    for (let i = 0; i < subtaskTitles.length; i++) {
-      await addTask({
-        title: subtaskTitles[i],
-        description: `Sous-tâche de: ${task.title}`,
-        completed: false,
-        priority: task.priority,
-        category: task.category,
-        tags: [...task.tags, 'sous-tâche'],
-        dueDate: task.dueDate
-      });
-    }
-  };
-
-  const handleAIDecomposition = async (subtasks: string[]) => {
+  const handleAIDecomposition = async (subtasks: any[]) => {
     const baseTask = {
       description: `Tâche parente: ${newTask.title}`,
       completed: false,
@@ -83,11 +65,13 @@ export const TaskManagerEnhanced = () => {
       dueDate: newTask.dueDate || undefined
     };
 
-    // Créer les sous-tâches
+    // Créer les sous-tâches avec les données du LLM
     for (const subtask of subtasks) {
       await addTask({
         ...baseTask,
-        title: subtask.trim(),
+        title: subtask.title,
+        description: subtask.description,
+        estimatedDuration: subtask.estimatedDuration
       });
     }
 
@@ -104,7 +88,8 @@ export const TaskManagerEnhanced = () => {
       priority: newTask.priority,
       category: newTask.category || 'Personnel',
       tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      dueDate: newTask.dueDate || undefined
+      dueDate: newTask.dueDate || undefined,
+      estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
     });
 
     resetForm();
@@ -119,7 +104,8 @@ export const TaskManagerEnhanced = () => {
       priority: newTask.priority,
       category: newTask.category,
       tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      dueDate: newTask.dueDate || undefined
+      dueDate: newTask.dueDate || undefined,
+      estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
     });
 
     resetForm();
@@ -133,7 +119,8 @@ export const TaskManagerEnhanced = () => {
       priority: task.priority,
       category: task.category,
       tags: task.tags.join(', '),
-      dueDate: task.dueDate || ''
+      dueDate: task.dueDate || '',
+      estimatedDuration: task.estimatedDuration?.toString() || ''
     });
     setShowAddForm(true);
   };
@@ -147,14 +134,17 @@ export const TaskManagerEnhanced = () => {
       priority: 'medium',
       category: '',
       tags: '',
-      dueDate: ''
+      dueDate: '',
+      estimatedDuration: ''
     });
   };
 
   const handleSplitTask = async () => {
     if (editingTask) {
-      await splitTaskIntoSubtasks(editingTask);
-      resetForm();
+      const success = await splitTaskIntoSubtasks(editingTask);
+      if (success) {
+        resetForm();
+      }
     }
   };
 

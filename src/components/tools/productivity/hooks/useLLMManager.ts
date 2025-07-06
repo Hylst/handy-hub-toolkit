@@ -15,12 +15,22 @@ interface LLMProvider {
 interface DecompositionRequest {
   taskTitle: string;
   taskDescription?: string;
+  tags?: string[];
+  priority?: 'low' | 'medium' | 'high';
+  category?: string;
+  estimatedDuration?: number;
   context?: string;
+}
+
+interface SubtaskData {
+  title: string;
+  description: string;
+  estimatedDuration?: number;
 }
 
 interface DecompositionResult {
   success: boolean;
-  subtasks: string[];
+  subtasks: SubtaskData[];
   error?: string;
 }
 
@@ -95,35 +105,77 @@ export const useLLMManager = () => {
 
     setIsLoading(true);
     try {
-      const prompt = `Décomposez la tâche suivante en sous-tâches spécifiques et actionnables :
+      const prompt = `Vous êtes un assistant spécialisé dans la décomposition de tâches en sous-tâches actionables.
 
-Tâche : ${request.taskTitle}
-${request.taskDescription ? `Description : ${request.taskDescription}` : ''}
-${request.context ? `Contexte : ${request.context}` : ''}
+TÂCHE À DÉCOMPOSER:
+Titre: ${request.taskTitle}
+${request.taskDescription ? `Description: ${request.taskDescription}` : ''}
+${request.tags && request.tags.length > 0 ? `Tags: ${request.tags.join(', ')}` : ''}
+${request.priority ? `Priorité: ${request.priority}` : ''}
+${request.category ? `Catégorie: ${request.category}` : ''}
+${request.estimatedDuration ? `Durée estimée totale: ${request.estimatedDuration} minutes` : ''}
+${request.context ? `Contexte: ${request.context}` : ''}
 
-Répondez uniquement avec une liste de sous-tâches, une par ligne, sans numérotation ni formatage spécial. Chaque sous-tâche doit être claire, spécifique et réalisable.`;
+INSTRUCTIONS:
+1. Analysez la tâche et décomposez-la en 2-5 sous-tâches spécifiques et actionnables
+2. Chaque sous-tâche doit être claire, réalisable et contribuer au résultat final
+3. Si une durée totale est donnée, répartissez-la intelligemment entre les sous-tâches
+4. Répondez UNIQUEMENT au format JSON suivant:
 
-      let subtasks: string[] = [];
+{
+  "subtasks": [
+    {
+      "title": "Titre de la sous-tâche 1",
+      "description": "Description détaillée de ce qu'il faut faire",
+      "estimatedDuration": 30
+    },
+    {
+      "title": "Titre de la sous-tâche 2", 
+      "description": "Description détaillée de ce qu'il faut faire",
+      "estimatedDuration": 45
+    }
+  ]
+}
+
+Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
+
+      let result: any;
 
       if (defaultProvider.provider === 'openai') {
-        subtasks = await callOpenAI(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callOpenAI(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'anthropic') {
-        subtasks = await callAnthropic(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callAnthropic(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'google') {
-        subtasks = await callGoogle(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callGoogle(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'deepseek') {
-        subtasks = await callDeepSeek(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callDeepSeek(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'openrouter') {
-        subtasks = await callOpenRouter(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callOpenRouter(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else if (defaultProvider.provider === 'xgrok') {
-        subtasks = await callXGrok(defaultProvider.api_key, prompt, defaultProvider.selected_model);
+        result = await callXGrok(defaultProvider.api_key, prompt, defaultProvider.selected_model);
       } else {
         throw new Error(`Fournisseur ${defaultProvider.provider} non supporté`);
       }
 
+      // Parser la réponse JSON
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(result);
+      } catch (parseError) {
+        console.error('Erreur parsing JSON:', parseError);
+        // Si pas JSON, essayer d'extraire manuellement
+        const lines = result.split('\n').filter((line: string) => line.trim().length > 0);
+        const subtasks = lines.map((line: string, index: number) => ({
+          title: line.replace(/^[-•*\d.\s]+/, '').trim(),
+          description: `Sous-tâche ${index + 1} de: ${request.taskTitle}`,
+          estimatedDuration: request.estimatedDuration ? Math.round(request.estimatedDuration / lines.length) : undefined
+        }));
+        parsedResult = { subtasks };
+      }
+
       return {
         success: true,
-        subtasks: subtasks.filter(task => task.trim().length > 0)
+        subtasks: parsedResult.subtasks || []
       };
     } catch (error) {
       console.error('Erreur décomposition IA:', error);

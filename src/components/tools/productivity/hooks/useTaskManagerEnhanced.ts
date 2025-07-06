@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useDexieDB } from '@/hooks/useDexieDB';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +11,7 @@ export interface Task {
   category: string;
   tags: string[];
   dueDate?: string;
+  estimatedDuration?: number; // Durée estimée en minutes
   createdAt: string;
   updatedAt: string;
 }
@@ -154,6 +154,80 @@ export const useTaskManagerEnhanced = () => {
       });
     }
   }, [tasksData, saveTasksData]);
+
+  // Fonction "Diviser" améliorée - divise une tâche en sous-tâches basées sur sa description
+  const splitTaskIntoSubtasks = useCallback(async (task: Task) => {
+    try {
+      // Si la description contient des lignes avec des puces ou des numéros, on les utilise
+      let subtaskTitles: string[] = [];
+      
+      if (task.description) {
+        // Chercher des patterns de liste (-, *, 1., 2., etc.)
+        const lines = task.description.split('\n').filter(line => line.trim());
+        const listItems = lines.filter(line => 
+          /^[-*•]\s/.test(line.trim()) || // puces
+          /^\d+\.\s/.test(line.trim()) || // numéros
+          /^[a-zA-Z]\)\s/.test(line.trim()) // lettres
+        );
+        
+        if (listItems.length > 0) {
+          subtaskTitles = listItems.map(item => 
+            item.replace(/^[-*•]\s|^\d+\.\s|^[a-zA-Z]\)\s/, '').trim()
+          );
+        } else {
+          // Si pas de liste, diviser par phrases ou créer des sous-tâches génériques
+          const sentences = task.description.split(/[.!?]+/).filter(s => s.trim().length > 10);
+          if (sentences.length > 1) {
+            subtaskTitles = sentences.map((sentence, index) => 
+              `${task.title} - Étape ${index + 1}: ${sentence.trim().substring(0, 50)}...`
+            );
+          } else {
+            // Créer des sous-tâches génériques
+            subtaskTitles = [
+              `${task.title} - Préparation`,
+              `${task.title} - Exécution`,
+              `${task.title} - Finalisation`
+            ];
+          }
+        }
+      } else {
+        // Pas de description, créer des sous-tâches génériques
+        subtaskTitles = [
+          `${task.title} - Partie 1`,
+          `${task.title} - Partie 2`
+        ];
+      }
+
+      // Créer les sous-tâches
+      for (let i = 0; i < subtaskTitles.length; i++) {
+        await addTask({
+          title: subtaskTitles[i],
+          description: `Sous-tâche de: ${task.title}`,
+          completed: false,
+          priority: task.priority,
+          category: task.category,
+          tags: [...task.tags, 'sous-tâche'],
+          dueDate: task.dueDate,
+          estimatedDuration: task.estimatedDuration ? Math.round(task.estimatedDuration / subtaskTitles.length) : undefined
+        });
+      }
+
+      toast({
+        title: "Tâche divisée avec succès",
+        description: `${subtaskTitles.length} sous-tâches créées à partir de "${task.title}"`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la division de la tâche:', error);
+      toast({
+        title: "Erreur de division",
+        description: "Impossible de diviser la tâche",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [addTask, toast]);
 
   // Export vers format Google Tasks
   const exportToGoogleTasks = useCallback(() => {
@@ -334,6 +408,7 @@ export const useTaskManagerEnhanced = () => {
     deleteTask,
     toggleTask,
     addCategory,
+    splitTaskIntoSubtasks,
     searchTerm,
     setSearchTerm,
     filterCategory,

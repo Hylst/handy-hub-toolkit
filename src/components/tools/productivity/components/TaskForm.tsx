@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Scissors, Sparkles, Calendar, Tag, AlertCircle } from 'lucide-react';
+import { Plus, Scissors, Sparkles, Calendar, Tag, AlertCircle, Clock } from 'lucide-react';
 import { useLLMManager } from '../hooks/useLLMManager';
 import { Task } from '../hooks/useTaskManagerEnhanced';
 
@@ -20,6 +21,7 @@ interface TaskFormProps {
     category: string;
     tags: string;
     dueDate: string;
+    estimatedDuration: string;
   };
   setNewTask: (task: any) => void;
   categories: string[];
@@ -48,7 +50,11 @@ export const TaskForm = ({
     try {
       const result = await decomposeTaskWithAI({
         taskTitle: newTask.title,
-        taskDescription: newTask.description
+        taskDescription: newTask.description,
+        tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        priority: newTask.priority,
+        category: newTask.category,
+        estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
       });
       
       if (result.success && result.subtasks.length > 0) {
@@ -89,7 +95,7 @@ export const TaskForm = ({
             Description
           </label>
           <Textarea
-            placeholder="Description détaillée..."
+            placeholder="Description détaillée... (utilisez des listes avec - ou 1. pour faciliter la division)"
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             className="min-h-20 border-blue-200 focus:border-blue-400"
@@ -169,6 +175,22 @@ export const TaskForm = ({
               className="border-blue-200 focus:border-blue-400"
             />
           </div>
+        </div>
+
+        {/* Durée estimée */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            Durée estimée (minutes)
+          </label>
+          <Input
+            type="number"
+            min="1"
+            placeholder="Ex: 60 pour 1 heure"
+            value={newTask.estimatedDuration}
+            onChange={(e) => setNewTask({ ...newTask, estimatedDuration: e.target.value })}
+            className="border-blue-200 focus:border-blue-400"
+          />
         </div>
 
         <Separator />

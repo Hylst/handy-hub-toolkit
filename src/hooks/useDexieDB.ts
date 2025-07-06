@@ -49,7 +49,22 @@ export const db = new ToolsDatabase();
 // Hook pour utiliser Dexie
 export const useDexieDB = () => {
   const calculateChecksum = (data: any): string => {
-    return btoa(JSON.stringify(data)).slice(0, 16);
+    try {
+      // Utiliser encodeURIComponent au lieu de btoa pour gérer les caractères spéciaux
+      const jsonString = JSON.stringify(data);
+      const encoded = encodeURIComponent(jsonString);
+      // Créer un hash simple à partir de la chaîne encodée
+      let hash = 0;
+      for (let i = 0; i < encoded.length; i++) {
+        const char = encoded.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convertir en 32bit integer
+      }
+      return Math.abs(hash).toString(16);
+    } catch (error) {
+      console.warn('Erreur calcul checksum:', error);
+      return Date.now().toString(16);
+    }
   };
 
   const saveData = async (tool: string, data: any): Promise<boolean> => {

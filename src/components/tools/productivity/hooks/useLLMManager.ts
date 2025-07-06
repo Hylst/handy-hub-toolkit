@@ -139,7 +139,7 @@ INSTRUCTIONS:
 
 Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
 
-      let result: any;
+      let result: string;
 
       if (defaultProvider.provider === 'openai') {
         result = await callOpenAI(defaultProvider.api_key, prompt, defaultProvider.selected_model);
@@ -157,21 +157,32 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
         throw new Error(`Fournisseur ${defaultProvider.provider} non supporté`);
       }
 
+      console.log('Réponse brute de l\'IA:', result);
+
       // Parser la réponse JSON
       let parsedResult;
       try {
-        parsedResult = JSON.parse(result);
+        // Nettoyer la chaîne pour enlever les backticks et autres caractères indésirables
+        const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        parsedResult = JSON.parse(cleanedResult);
       } catch (parseError) {
         console.error('Erreur parsing JSON:', parseError);
+        console.log('Tentative de parsing manuel...');
+        
         // Si pas JSON, essayer d'extraire manuellement
         const lines = result.split('\n').filter((line: string) => line.trim().length > 0);
-        const subtasks = lines.map((line: string, index: number) => ({
-          title: line.replace(/^[-•*\d.\s]+/, '').trim(),
-          description: `Sous-tâche ${index + 1} de: ${request.taskTitle}`,
-          estimatedDuration: request.estimatedDuration ? Math.round(request.estimatedDuration / lines.length) : undefined
-        }));
+        const subtasks = lines.map((line: string, index: number) => {
+          const cleanLine = line.replace(/^[-•*\d.\s]+/, '').trim();
+          return {
+            title: cleanLine,
+            description: `Étape ${index + 1} pour: ${request.taskTitle}`,
+            estimatedDuration: request.estimatedDuration ? Math.round(request.estimatedDuration / lines.length) : undefined
+          };
+        });
         parsedResult = { subtasks };
       }
+
+      console.log('Résultat parsé:', parsedResult);
 
       return {
         success: true,
@@ -189,7 +200,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
   }, [defaultProvider]);
 
-  const callOpenAI = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callOpenAI = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'gpt-4o';
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -203,7 +214,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
         messages: [
           {
             role: 'system',
-            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement avec une liste de sous-tâches, une par ligne.'
+            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement en JSON valide.'
           },
           {
             role: 'user',
@@ -221,15 +232,10 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.choices[0]?.message?.content || '';
   };
 
-  const callAnthropic = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callAnthropic = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'claude-3-5-sonnet-20241022';
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -257,15 +263,10 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.content[0]?.text || '';
   };
 
-  const callGoogle = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callGoogle = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'gemini-2.0-flash-exp';
     
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -296,15 +297,10 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.candidates[0]?.content?.parts[0]?.text || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.candidates[0]?.content?.parts[0]?.text || '';
   };
 
-  const callDeepSeek = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callDeepSeek = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'deepseek-chat';
     
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -318,7 +314,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
         messages: [
           {
             role: 'system',
-            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement avec une liste de sous-tâches, une par ligne.'
+            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement en JSON valide.'
           },
           {
             role: 'user',
@@ -336,15 +332,10 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.choices[0]?.message?.content || '';
   };
 
-  const callOpenRouter = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callOpenRouter = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'deepseek/deepseek-r1';
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -359,7 +350,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
         messages: [
           {
             role: 'system',
-            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement avec une liste de sous-tâches, une par ligne.'
+            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement en JSON valide.'
           },
           {
             role: 'user',
@@ -377,15 +368,10 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.choices[0]?.message?.content || '';
   };
 
-  const callXGrok = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string[]> => {
+  const callXGrok = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'grok-beta';
     
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -399,7 +385,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
         messages: [
           {
             role: 'system',
-            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement avec une liste de sous-tâches, une par ligne.'
+            content: 'Vous êtes un assistant spécialisé dans la décomposition de tâches. Répondez uniquement en JSON valide.'
           },
           {
             role: 'user',
@@ -417,12 +403,7 @@ Répondez UNIQUEMENT avec le JSON, sans autre texte.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
-    
-    return content
-      .split('\n')
-      .map((line: string) => line.replace(/^[-•*\d.\s]+/, '').trim())
-      .filter((line: string) => line.length > 0);
+    return data.choices[0]?.message?.content || '';
   };
 
   return {

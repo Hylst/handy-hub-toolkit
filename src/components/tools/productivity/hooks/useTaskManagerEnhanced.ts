@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useDexieDB } from '@/hooks/useDexieDB';
+import { useRobustDataManager } from '@/hooks/useRobustDataManager';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Task {
@@ -40,7 +40,7 @@ const defaultTasksData: TasksData = {
 
 export const useTaskManagerEnhanced = () => {
   const { toast } = useToast();
-  const { saveData, loadData, deleteData } = useDexieDB();
+  const { saveData, loadData, deleteData } = useRobustDataManager();
   
   const [tasksData, setTasksData] = useState<TasksData>(defaultTasksData);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,25 +58,38 @@ export const useTaskManagerEnhanced = () => {
     highPriorityTasks: tasks.filter(t => t.priority === 'high' && !t.completed).length
   }), []);
 
-  // Chargement initial UNIQUE
+  // Chargement initial avec retry et délai
   useEffect(() => {
-    if (hasLoadedOnce) return; // Éviter les rechargements multiples
+    if (hasLoadedOnce) return;
     
     const loadInitialData = async () => {
       try {
         console.log('🔄 Chargement initial des tâches...');
+        
+        // Ajouter un délai pour éviter les conflits de chargement
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const data = await loadData('productivity-tasks');
-        if (data && data.tasks) {
-          console.log(`✅ ${data.tasks.length} tâches chargées`);
+        if (data && data.tasks && Array.isArray(data.tasks)) {
+          console.log(`✅ ${data.tasks.length} tâches chargées depuis le stockage`);
           const stats = calculateStats(data.tasks);
-          setTasksData({ ...data, stats });
+          setTasksData({ 
+            ...defaultTasksData,
+            ...data, 
+            stats 
+          });
         } else {
-          console.log('📝 Utilisation des données par défaut');
+          console.log('📝 Initialisation avec données par défaut');
           setTasksData(defaultTasksData);
         }
       } catch (error) {
-        console.error('❌ Erreur chargement:', error);
+        console.error('❌ Erreur chargement initial:', error);
         setTasksData(defaultTasksData);
+        toast({
+          title: "Problème de chargement",
+          description: "Utilisation des données par défaut",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
         setHasLoadedOnce(true);
@@ -84,65 +97,101 @@ export const useTaskManagerEnhanced = () => {
     };
 
     loadInitialData();
-  }, [hasLoadedOnce, loadData, calculateStats]);
+  }, [hasLoadedOnce, loadData, calculateStats, toast]);
 
-  // Sauvegarde optimisée
-  const saveTasksData = useCallback(async (newData: TasksData) => {
+  // Sauvegarde robuste avec retry
+  const saveTasksData = useCallback(async (newData: TasksData, retryCount = 0): Promise<boolean> => {
     try {
       const dataWithStats = {
         ...newData,
-        stats: calculateStats(newData.tasks)
+        stats: calculateStats(newData.tasks),
+        lastModified: new Date().toISOString(),
+        version: '2.3.0'
       };
       
-      console.log('💾 Sauvegarde de', dataWithStats.tasks.length, 'tâches');
+      console.log(`💾 Tentative sauvegarde ${retryCount + 1}: ${dataWithStats.tasks.length} tâches`);
+      
       const success = await saveData('productivity-tasks', dataWithStats);
       
       if (success) {
         setTasksData(dataWithStats);
-        console.log('✅ Tâches sauvegardées');
+        console.log('✅ Sauvegarde réussie');
         return true;
       } else {
         throw new Error('Échec de la sauvegarde');
       }
     } catch (error) {
-      console.error('❌ Erreur sauvegarde:', error);
+      console.error(`❌ Erreur sauvegarde (tentative ${retryCount + 1}):`, error);
+      
+      // Retry jusqu'à 2 fois
+      if (retryCount < 2) {
+        console.log(`🔄 Nouvelle tentative dans 1 seconde...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return saveTasksData(newData, retryCount + 1);
+      }
+      
       toast({
         title: "Erreur de sauvegarde",
-        description: "Impossible de sauvegarder les tâches",
+        description: "Impossible de sauvegarder les tâches après plusieurs tentatives",
         variant: "destructive",
       });
       return false;
     }
   }, [saveData, calculateStats, toast]);
 
-  // Ajout de tâche corrigé
-  const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    console.log('➕ Ajout tâche:', taskData.title);
-    
-    const newTask: Task = {
-      ...taskData,
-      id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+  // Ajout de tâche avec validation renforcée
+  const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | null> => {
+    try {
+      // Validation des données
+      if (!taskData.title?.trim()) {
+        throw new Error('Le titre de la tâche est requis');
+      }
 
-    // Créer les nouvelles données
-    const newTasksData = {
-      ...tasksData,
-      tasks: [...tasksData.tasks, newTask]
-    };
+      if (taskData.title.length > 200) {
+        throw new Error('Le titre de la tâche est trop long (max 200 caractères)');
+      }
 
-    // Sauvegarder immédiatement
-    const success = await saveTasksData(newTasksData);
-    
-    if (success) {
-      console.log('✅ Tâche ajoutée:', newTask.title);
-      return newTask;
-    } else {
-      console.error('❌ Échec ajout tâche');
+      console.log('➕ Ajout tâche:', taskData.title);
+      
+      const newTask: Task = {
+        ...taskData,
+        id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: taskData.title.trim(),
+        description: taskData.description?.trim() || '',
+        tags: Array.isArray(taskData.tags) ? taskData.tags.filter(tag => tag.trim()) : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // Créer les nouvelles données
+      const newTasksData = {
+        ...tasksData,
+        tasks: [...tasksData.tasks, newTask]
+      };
+
+      // Sauvegarder avec retry
+      const success = await saveTasksData(newTasksData);
+      
+      if (success) {
+        console.log('✅ Tâche ajoutée avec succès:', newTask.title);
+        toast({
+          title: "Tâche ajoutée",
+          description: `"${newTask.title}" a été ajoutée avec succès`,
+        });
+        return newTask;
+      } else {
+        throw new Error('Échec de la sauvegarde');
+      }
+    } catch (error) {
+      console.error('❌ Erreur ajout tâche:', error);
+      toast({
+        title: "Erreur d'ajout",
+        description: error instanceof Error ? error.message : "Impossible d'ajouter la tâche",
+        variant: "destructive",
+      });
       return null;
     }
-  }, [tasksData, saveTasksData]);
+  }, [tasksData, saveTasksData, toast]);
 
   const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
     const updatedTasks = tasksData.tasks.map(task =>
@@ -184,16 +233,17 @@ export const useTaskManagerEnhanced = () => {
 
   const splitTaskIntoSubtasks = useCallback(async (task: Task) => {
     try {
-      // Si la description contient des lignes avec des puces ou des numéros, on les utilise
+      console.log('✂️ Division de la tâche:', task.title);
+      
       let subtaskTitles: string[] = [];
       
       if (task.description) {
-        // Chercher des patterns de liste (-, *, 1., 2., etc.)
+        // Chercher des patterns de liste
         const lines = task.description.split('\n').filter(line => line.trim());
         const listItems = lines.filter(line => 
-          /^[-*•]\s/.test(line.trim()) || // puces
-          /^\d+\.\s/.test(line.trim()) || // numéros
-          /^[a-zA-Z]\)\s/.test(line.trim()) // lettres
+          /^[-*•]\s/.test(line.trim()) || 
+          /^\d+\.\s/.test(line.trim()) || 
+          /^[a-zA-Z]\)\s/.test(line.trim())
         );
         
         if (listItems.length > 0) {
@@ -201,54 +251,60 @@ export const useTaskManagerEnhanced = () => {
             item.replace(/^[-*•]\s|^\d+\.\s|^[a-zA-Z]\)\s/, '').trim()
           );
         } else {
-          // Si pas de liste, diviser par phrases ou créer des sous-tâches génériques
-          const sentences = task.description.split(/[.!?]+/).filter(s => s.trim().length > 10);
-          if (sentences.length > 1) {
-            subtaskTitles = sentences.map((sentence, index) => 
-              `${task.title} - Étape ${index + 1}: ${sentence.trim().substring(0, 50)}...`
-            );
-          } else {
-            // Créer des sous-tâches génériques
-            subtaskTitles = [
-              `${task.title} - Préparation`,
-              `${task.title} - Exécution`,
-              `${task.title} - Finalisation`
-            ];
-          }
+          // Si pas de liste, créer des étapes génériques
+          subtaskTitles = [
+            `${task.title} - Préparation`,
+            `${task.title} - Recherche et analyse`,
+            `${task.title} - Développement/Exécution`,
+            `${task.title} - Test et validation`,
+            `${task.title} - Finalisation`
+          ];
         }
       } else {
         // Pas de description, créer des sous-tâches génériques
         subtaskTitles = [
-          `${task.title} - Partie 1`,
-          `${task.title} - Partie 2`
+          `${task.title} - Phase 1`,
+          `${task.title} - Phase 2`,
+          `${task.title} - Phase 3`
         ];
       }
 
-      // Créer les sous-tâches
+      // Créer les sous-tâches avec validation
+      const createdSubtasks: Task[] = [];
       for (let i = 0; i < subtaskTitles.length; i++) {
-        await addTask({
+        const subtaskData = {
           title: subtaskTitles[i],
-          description: `Sous-tâche de: ${task.title}`,
+          description: `Sous-tâche générée automatiquement à partir de: ${task.title}`,
           completed: false,
           priority: task.priority,
           category: task.category,
-          tags: [...task.tags, 'sous-tâche'],
+          tags: [...task.tags, 'sous-tâche-auto', `étape-${i + 1}`],
           dueDate: task.dueDate,
-          estimatedDuration: task.estimatedDuration ? Math.round(task.estimatedDuration / subtaskTitles.length) : undefined
-        });
+          estimatedDuration: task.estimatedDuration ? 
+            Math.round(task.estimatedDuration / subtaskTitles.length) : 
+            Math.round(30 + Math.random() * 30)
+        };
+
+        const createdTask = await addTask(subtaskData);
+        if (createdTask) {
+          createdSubtasks.push(createdTask);
+        }
       }
 
-      toast({
-        title: "Tâche divisée avec succès",
-        description: `${subtaskTitles.length} sous-tâches créées à partir de "${task.title}"`,
-      });
-
-      return true;
+      if (createdSubtasks.length > 0) {
+        toast({
+          title: "Tâche divisée avec succès",
+          description: `${createdSubtasks.length} sous-tâches créées à partir de "${task.title}"`,
+        });
+        return true;
+      } else {
+        throw new Error('Aucune sous-tâche n\'a pu être créée');
+      }
     } catch (error) {
-      console.error('Erreur lors de la division de la tâche:', error);
+      console.error('❌ Erreur division de tâche:', error);
       toast({
         title: "Erreur de division",
-        description: "Impossible de diviser la tâche",
+        description: error instanceof Error ? error.message : "Impossible de diviser la tâche",
         variant: "destructive",
       });
       return false;
@@ -409,19 +465,27 @@ export const useTaskManagerEnhanced = () => {
     }
   }, [deleteData, toast]);
 
-  // Filtrage optimisé
+  // Filtrage optimisé avec gestion d'erreurs
   const filteredTasks = tasksData.tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = filterCategory === 'all' || task.category === filterCategory;
-    const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'completed' && task.completed) ||
-                         (filterStatus === 'pending' && !task.completed);
+    try {
+      const matchesSearch = !searchTerm || 
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (Array.isArray(task.tags) && task.tags.some(tag => 
+          tag.toLowerCase().includes(searchTerm.toLowerCase())
+        ));
+      
+      const matchesCategory = filterCategory === 'all' || task.category === filterCategory;
+      const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
+      const matchesStatus = filterStatus === 'all' || 
+                           (filterStatus === 'completed' && task.completed) ||
+                           (filterStatus === 'pending' && !task.completed);
 
-    return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
+      return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
+    } catch (error) {
+      console.warn('⚠️ Erreur filtrage tâche:', task.id, error);
+      return false;
+    }
   });
 
   return {

@@ -107,57 +107,60 @@ export const useLLMManager = () => {
 
     setIsLoading(true);
     try {
-      // Construire un prompt détaillé et structuré
-      const prompt = `Tu es un expert en gestion de projets et en décomposition de tâches. Ton rôle est d'analyser une tâche principale et de la diviser en sous-tâches spécifiques, actionables et logiquement ordonnées.
+      // Prompt ultra-strict pour forcer la création de multiples sous-tâches
+      const prompt = `RÈGLES STRICTES À RESPECTER ABSOLUMENT :
+1. Tu DOIS créer EXACTEMENT entre 4 et 8 sous-tâches (jamais moins de 4, jamais plus de 8)
+2. Réponds UNIQUEMENT en JSON valide, AUCUN autre texte
+3. Chaque sous-tâche doit être spécifique et actionnable
+4. Ordonne les sous-tâches logiquement
 
-RÈGLES STRICTES :
-1. Tu DOIS créer entre 3 et 10 sous-tâches (jamais moins de 3, jamais plus de 10)
-2. Chaque sous-tâche doit être spécifique, mesurable et actionnable
-3. Les sous-tâches doivent suivre un ordre logique d'exécution
-4. Répartis intelligemment la durée totale entre les sous-tâches si fournie
-5. Adapte la priorité des sous-tâches selon leur importance dans le processus
-6. Réponds UNIQUEMENT au format JSON demandé, sans autre texte
-
-TÂCHE À ANALYSER :
-Titre : "${request.taskTitle}"
-${request.taskDescription ? `Description : "${request.taskDescription}"` : ''}
-${request.tags && request.tags.length > 0 ? `Tags existants : [${request.tags.join(', ')}]` : ''}
-${request.priority ? `Priorité globale : ${request.priority}` : ''}
-${request.category ? `Catégorie : ${request.category}` : ''}
-${request.estimatedDuration ? `Durée totale estimée : ${request.estimatedDuration} minutes` : ''}
-${request.context ? `Contexte supplémentaire : ${request.context}` : ''}
+TÂCHE PRINCIPALE :
+Titre: "${request.taskTitle}"
+${request.taskDescription ? `Description: "${request.taskDescription}"` : ''}
+${request.estimatedDuration ? `Durée totale: ${request.estimatedDuration} minutes` : ''}
+${request.priority ? `Priorité: ${request.priority}` : ''}
+${request.category ? `Catégorie: ${request.category}` : ''}
 
 ANALYSE REQUISE :
-- Identifie les différentes phases/étapes nécessaires
-- Détermine les prérequis et dépendances entre étapes  
-- Estime le temps nécessaire pour chaque sous-tâche
-- Assigne une priorité appropriée à chaque sous-tâche
+- Divise cette tâche en étapes logiques et séquentielles
+- Chaque étape doit prendre 15-60 minutes
+- Assure-toi que toutes les étapes sont nécessaires
 
-FORMAT DE RÉPONSE OBLIGATOIRE (JSON uniquement) :
+FORMAT JSON OBLIGATOIRE (AUCUN AUTRE TEXTE) :
 {
-  "analysis": "Brève analyse de la tâche et de sa complexité",
   "subtasks": [
     {
-      "title": "Titre précis de la sous-tâche 1",
-      "description": "Description détaillée de ce qu'il faut accomplir exactement",
-      "estimatedDuration": 25,
+      "title": "Étape 1 - Titre précis",
+      "description": "Description détaillée des actions à effectuer",
+      "estimatedDuration": 45,
       "priority": "high",
       "order": 1
     },
     {
-      "title": "Titre précis de la sous-tâche 2", 
-      "description": "Description détaillée avec les actions concrètes à effectuer",
-      "estimatedDuration": 35,
+      "title": "Étape 2 - Titre précis",
+      "description": "Description détaillée des actions à effectuer",
+      "estimatedDuration": 30,
       "priority": "medium",
       "order": 2
+    },
+    {
+      "title": "Étape 3 - Titre précis",
+      "description": "Description détaillée des actions à effectuer",
+      "estimatedDuration": 35,
+      "priority": "medium",
+      "order": 3
+    },
+    {
+      "title": "Étape 4 - Titre précis",
+      "description": "Description détaillée des actions à effectuer",
+      "estimatedDuration": 25,
+      "priority": "low",
+      "order": 4
     }
   ]
 }
 
-PRIORITÉS POSSIBLES : "low", "medium", "high"
-NOMBRE DE SOUS-TÂCHES : Entre 3 et 10 (obligatoire)
-
-Réponds maintenant en JSON uniquement :`;
+RÉPONDS UNIQUEMENT AVEC LE JSON, RIEN D'AUTRE !`;
 
       let result: string;
 
@@ -177,41 +180,58 @@ Réponds maintenant en JSON uniquement :`;
         throw new Error(`Fournisseur ${defaultProvider.provider} non supporté`);
       }
 
-      console.log('Réponse brute de l\'IA:', result);
+      console.log('🤖 Réponse brute de l\'IA:', result);
 
-      // Parser et valider la réponse JSON
+      // Nettoyage et parsing plus robuste
       let parsedResult;
       try {
-        // Nettoyer la chaîne pour enlever les backticks et autres caractères indésirables
-        const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        // Nettoyer agressivement la réponse
+        let cleanedResult = result.trim();
+        
+        // Enlever les backticks markdown
+        cleanedResult = cleanedResult.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+        
+        // Enlever tout texte avant le premier {
+        const jsonStart = cleanedResult.indexOf('{');
+        if (jsonStart > 0) {
+          cleanedResult = cleanedResult.substring(jsonStart);
+        }
+        
+        // Enlever tout texte après le dernier }
+        const jsonEnd = cleanedResult.lastIndexOf('}');
+        if (jsonEnd > 0) {
+          cleanedResult = cleanedResult.substring(0, jsonEnd + 1);
+        }
+        
+        console.log('🧹 JSON nettoyé:', cleanedResult);
+        
         parsedResult = JSON.parse(cleanedResult);
         
-        // Validation de la structure
+        // Validation stricte
         if (!parsedResult.subtasks || !Array.isArray(parsedResult.subtasks)) {
-          throw new Error('Structure JSON invalide : subtasks manquant ou incorrect');
+          throw new Error('Pas de propriété subtasks ou pas un tableau');
         }
 
-        // Validation du nombre de sous-tâches
         if (parsedResult.subtasks.length < 3) {
-          throw new Error(`Nombre insuffisant de sous-tâches : ${parsedResult.subtasks.length} (minimum 3)`);
+          throw new Error(`Pas assez de sous-tâches : ${parsedResult.subtasks.length}`);
         }
 
-        if (parsedResult.subtasks.length > 10) {
-          console.warn(`Trop de sous-tâches générées (${parsedResult.subtasks.length}), limitation à 10`);
-          parsedResult.subtasks = parsedResult.subtasks.slice(0, 10);
+        // Limiter à 8 sous-tâches max
+        if (parsedResult.subtasks.length > 8) {
+          parsedResult.subtasks = parsedResult.subtasks.slice(0, 8);
         }
 
-        // Validation et nettoyage de chaque sous-tâche
+        // Valider et nettoyer chaque sous-tâche
         parsedResult.subtasks = parsedResult.subtasks.map((subtask: any, index: number) => {
           if (!subtask.title || typeof subtask.title !== 'string') {
-            throw new Error(`Sous-tâche ${index + 1} : titre manquant ou invalide`);
+            throw new Error(`Sous-tâche ${index + 1} : titre manquant`);
           }
           
           return {
             title: subtask.title.trim(),
             description: subtask.description || `Sous-tâche ${index + 1} pour: ${request.taskTitle}`,
             estimatedDuration: typeof subtask.estimatedDuration === 'number' ? 
-              Math.max(5, Math.min(240, subtask.estimatedDuration)) : // Entre 5 et 240 minutes
+              Math.max(5, Math.min(120, subtask.estimatedDuration)) : 
               (request.estimatedDuration ? Math.round(request.estimatedDuration / parsedResult.subtasks.length) : 30),
             priority: ['low', 'medium', 'high'].includes(subtask.priority) ? 
               subtask.priority : request.priority || 'medium',
@@ -219,47 +239,32 @@ Réponds maintenant en JSON uniquement :`;
           };
         });
 
-        // Trier par ordre si spécifié
+        // Trier par ordre
         parsedResult.subtasks.sort((a: SubtaskData, b: SubtaskData) => (a.order || 0) - (b.order || 0));
 
       } catch (parseError) {
-        console.error('Erreur parsing JSON:', parseError);
-        console.log('Tentative de parsing manuel...');
+        console.error('❌ Erreur parsing JSON:', parseError);
+        console.log('🔄 Création de sous-tâches par défaut...');
         
-        // Fallback : parsing manuel si JSON invalide
-        const lines = result.split('\n').filter((line: string) => line.trim().length > 0);
-        const subtaskLines = lines.filter((line: string) => 
-          /^[-•*\d.\s]/.test(line) || line.includes('tâche') || line.includes('étape')
-        );
+        // Créer des sous-tâches par défaut basées sur le titre
+        const baseTitle = request.taskTitle;
+        const defaultSubtasks = [
+          { title: `${baseTitle} - Analyse et planification`, description: 'Analyser les exigences et établir un plan détaillé' },
+          { title: `${baseTitle} - Préparation des ressources`, description: 'Rassembler tous les outils et matériaux nécessaires' },
+          { title: `${baseTitle} - Exécution principale`, description: 'Réaliser la partie principale du travail' },
+          { title: `${baseTitle} - Contrôle qualité`, description: 'Vérifier la conformité et la qualité du résultat' },
+          { title: `${baseTitle} - Finalisation`, description: 'Terminer et documenter le travail accompli' }
+        ];
         
-        if (subtaskLines.length < 3) {
-          // Créer des sous-tâches génériques si parsing impossible
-          const baseTitle = request.taskTitle;
-          const subtasks = [
-            { title: `${baseTitle} - Phase de préparation`, description: 'Analyser les exigences et préparer les ressources nécessaires' },
-            { title: `${baseTitle} - Phase de planification`, description: 'Établir un plan détaillé et organiser les étapes' },
-            { title: `${baseTitle} - Phase d'exécution principale`, description: 'Réaliser les actions principales de la tâche' },
-            { title: `${baseTitle} - Phase de vérification`, description: 'Contrôler la qualité et valider les résultats' },
-            { title: `${baseTitle} - Phase de finalisation`, description: 'Terminer, documenter et livrer le travail accompli' }
-          ];
-          
-          parsedResult = { subtasks };
-        } else {
-          const subtasks = subtaskLines.slice(0, Math.min(10, Math.max(3, subtaskLines.length)))
-            .map((line: string, index: number) => {
-              const cleanLine = line.replace(/^[-•*\d.\s]+/, '').trim();
-              return {
-                title: cleanLine || `Sous-tâche ${index + 1} - ${request.taskTitle}`,
-                description: `Étape ${index + 1} pour accomplir: ${request.taskTitle}`,
-                estimatedDuration: request.estimatedDuration ? 
-                  Math.round(request.estimatedDuration / subtaskLines.length) : 30,
-                priority: request.priority || 'medium',
-                order: index + 1
-              };
-            });
-          
-          parsedResult = { subtasks };
-        }
+        parsedResult = { 
+          subtasks: defaultSubtasks.map((subtask, index) => ({
+            ...subtask,
+            estimatedDuration: request.estimatedDuration ? 
+              Math.round(request.estimatedDuration / defaultSubtasks.length) : 30,
+            priority: request.priority || 'medium',
+            order: index + 1
+          }))
+        };
       }
 
       console.log(`✅ ${parsedResult.subtasks.length} sous-tâches générées:`, parsedResult.subtasks);
@@ -269,7 +274,7 @@ Réponds maintenant en JSON uniquement :`;
         subtasks: parsedResult.subtasks
       };
     } catch (error) {
-      console.error('Erreur décomposition IA:', error);
+      console.error('❌ Erreur décomposition IA:', error);
       return {
         success: false,
         subtasks: [],

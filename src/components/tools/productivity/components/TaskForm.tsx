@@ -91,7 +91,7 @@ export const TaskForm = ({
         
         toast({
           title: "Décomposition réussie",
-          description: `${result.subtasks.length} sous-tâches ont été générées par l'IA`,
+          description: `${result.subtasks.length} sous-tâches ont été générées et ajoutées`,
         });
         
         await onAIDecompose(result.subtasks);
@@ -124,7 +124,7 @@ export const TaskForm = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Titre */}
+        {/* Titre avec autocomplete */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Titre *
@@ -134,10 +134,12 @@ export const TaskForm = ({
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
             className="border-blue-200 focus:border-blue-400"
+            autoComplete="off"
+            name="task-title"
           />
         </div>
 
-        {/* Description */}
+        {/* Description avec autocomplete */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Description
@@ -147,6 +149,8 @@ export const TaskForm = ({
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             className="min-h-20 border-blue-200 focus:border-blue-400"
+            autoComplete="off"
+            name="task-description"
           />
         </div>
 
@@ -196,7 +200,7 @@ export const TaskForm = ({
           </div>
         </div>
 
-        {/* Ligne 2: Tags et Date d'échéance */}
+        {/* Ligne 2: Tags et Date d'échéance avec autocomplete */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
@@ -208,6 +212,8 @@ export const TaskForm = ({
               value={newTask.tags}
               onChange={(e) => setNewTask({ ...newTask, tags: e.target.value })}
               className="border-blue-200 focus:border-blue-400"
+              autoComplete="off"
+              name="task-tags"
             />
           </div>
 
@@ -221,11 +227,13 @@ export const TaskForm = ({
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
               className="border-blue-200 focus:border-blue-400"
+              autoComplete="off"
+              name="task-due-date"
             />
           </div>
         </div>
 
-        {/* Durée estimée */}
+        {/* Durée estimée avec autocomplete */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
             <Clock className="w-4 h-4" />
@@ -239,6 +247,8 @@ export const TaskForm = ({
             value={newTask.estimatedDuration}
             onChange={(e) => setNewTask({ ...newTask, estimatedDuration: e.target.value })}
             className="border-blue-200 focus:border-blue-400"
+            autoComplete="off"
+            name="task-duration"
           />
         </div>
 
@@ -271,7 +281,7 @@ export const TaskForm = ({
             className="border-purple-300 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
           >
             <Brain className="w-4 h-4 mr-2" />
-            {isDecomposing ? 'IA en cours...' : 'IA Décomposer (3-10 tâches)'}
+            {isDecomposing ? 'IA en cours...' : 'IA Décomposer (4-8 sous-tâches)'}
           </Button>
         </div>
 
@@ -279,10 +289,11 @@ export const TaskForm = ({
         <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg space-y-1">
           <div className="flex items-center gap-2">
             <Brain className="w-4 h-4" />
-            <strong>Décomposition IA intelligente</strong>
+            <strong>Décomposition IA ultra-intelligente</strong>
           </div>
-          <p>• L'IA analysera votre tâche et créera 3 à 10 sous-tâches détaillées</p>
+          <p>• L'IA analysera votre tâche et créera 4 à 8 sous-tâches détaillées et ordonnées</p>
           <p>• Plus votre description est précise, meilleure sera la décomposition</p>
+          <p>• Toutes les sous-tâches seront automatiquement sauvegardées</p>
           <p>• {hasConfiguredProvider ? '✅ API configurée' : '⚠️ Configurez vos clés API dans les Paramètres'}</p>
         </div>
       </CardContent>

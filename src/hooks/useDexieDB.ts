@@ -1,4 +1,3 @@
-
 import Dexie, { Table } from 'dexie';
 
 // Types pour la base de données
@@ -26,7 +25,7 @@ export interface ExportHistory {
   metadata: any;
 }
 
-// Base de données Dexie
+// Base de données Dexie avec version corrigée
 class ToolsDatabase extends Dexie {
   storedData!: Table<StoredData>;
   userPreferences!: Table<UserPreference>;
@@ -35,7 +34,8 @@ class ToolsDatabase extends Dexie {
   constructor() {
     super('ToolsAppDatabase');
     
-    this.version(1).stores({
+    // Version augmentée pour corriger le problème de schéma
+    this.version(15).stores({
       storedData: '&id, tool, timestamp, synced',
       userPreferences: '&id, tool, timestamp',
       exportHistory: '&id, type, timestamp'
@@ -46,19 +46,17 @@ class ToolsDatabase extends Dexie {
 // Instance singleton
 export const db = new ToolsDatabase();
 
-// Hook pour utiliser Dexie
+// Hook pour utiliser Dexie avec gestion d'erreur améliorée
 export const useDexieDB = () => {
   const calculateChecksum = (data: any): string => {
     try {
-      // Utiliser encodeURIComponent au lieu de btoa pour gérer les caractères spéciaux
       const jsonString = JSON.stringify(data);
       const encoded = encodeURIComponent(jsonString);
-      // Créer un hash simple à partir de la chaîne encodée
       let hash = 0;
       for (let i = 0; i < encoded.length; i++) {
         const char = encoded.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convertir en 32bit integer
+        hash = hash & hash;
       }
       return Math.abs(hash).toString(16);
     } catch (error) {
@@ -87,7 +85,16 @@ export const useDexieDB = () => {
       return true;
     } catch (error) {
       console.error(`❌ Erreur Dexie pour ${tool}:`, error);
-      return false;
+      
+      // Fallback vers localStorage si Dexie échoue
+      try {
+        localStorage.setItem(`dexie-fallback-${tool}`, JSON.stringify(data));
+        console.log(`📦 Fallback localStorage pour ${tool}`);
+        return true;
+      } catch (localError) {
+        console.error(`❌ Erreur localStorage pour ${tool}:`, localError);
+        return false;
+      }
     }
   };
 
@@ -97,20 +104,41 @@ export const useDexieDB = () => {
       const record = await db.storedData.get(id);
       
       if (record) {
-        // Vérifier la checksum
         const calculatedChecksum = calculateChecksum(record.data);
         if (record.checksum && record.checksum !== calculatedChecksum) {
           console.warn(`⚠️ Checksum invalide pour ${tool}`);
-          return null;
         }
         
         console.log(`✅ Données chargées avec Dexie pour ${tool}`);
         return record.data;
       }
       
+      // Fallback vers localStorage si pas de données Dexie
+      try {
+        const fallbackData = localStorage.getItem(`dexie-fallback-${tool}`);
+        if (fallbackData) {
+          console.log(`📦 Fallback chargé depuis localStorage pour ${tool}`);
+          return JSON.parse(fallbackData);
+        }
+      } catch (localError) {
+        console.warn(`⚠️ Erreur localStorage fallback pour ${tool}:`, localError);
+      }
+      
       return null;
     } catch (error) {
       console.error(`❌ Erreur de chargement Dexie pour ${tool}:`, error);
+      
+      // Fallback vers localStorage
+      try {
+        const fallbackData = localStorage.getItem(`dexie-fallback-${tool}`);
+        if (fallbackData) {
+          console.log(`📦 Fallback chargé depuis localStorage pour ${tool}`);
+          return JSON.parse(fallbackData);
+        }
+      } catch (localError) {
+        console.warn(`⚠️ Erreur localStorage fallback pour ${tool}:`, localError);
+      }
+      
       return null;
     }
   };
@@ -119,11 +147,23 @@ export const useDexieDB = () => {
     try {
       const id = `${tool}-main`;
       await db.storedData.delete(id);
+      
+      // Nettoyer aussi le fallback localStorage
+      localStorage.removeItem(`dexie-fallback-${tool}`);
+      
       console.log(`🗑️ Données supprimées avec Dexie pour ${tool}`);
       return true;
     } catch (error) {
       console.error(`❌ Erreur de suppression Dexie pour ${tool}:`, error);
-      return false;
+      
+      // Fallback vers localStorage
+      try {
+        localStorage.removeItem(`dexie-fallback-${tool}`);
+        return true;
+      } catch (localError) {
+        console.error(`❌ Erreur localStorage suppression pour ${tool}:`, localError);
+        return false;
+      }
     }
   };
 

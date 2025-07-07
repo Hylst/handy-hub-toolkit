@@ -61,15 +61,18 @@ export const useTaskManagerEnhanced = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        console.log('🔄 Chargement des données depuis Dexie...');
         const data = await loadData('productivity-tasks');
         if (data && data.tasks) {
+          console.log(`✅ ${data.tasks.length} tâches chargées depuis Dexie`);
           const stats = calculateStats(data.tasks);
           setTasksData({ ...data, stats });
         } else {
+          console.log('ℹ️ Aucune donnée trouvée, utilisation des données par défaut');
           setTasksData(defaultTasksData);
         }
       } catch (error) {
-        console.error('Erreur chargement tâches:', error);
+        console.error('❌ Erreur chargement tâches:', error);
         setTasksData(defaultTasksData);
       } finally {
         setIsLoading(false);
@@ -79,7 +82,7 @@ export const useTaskManagerEnhanced = () => {
     loadInitialData();
   }, [loadData, calculateStats]);
 
-  // Sauvegarde avec debounce
+  // Sauvegarde immédiate à chaque changement
   const saveTasksData = useCallback(async (newData: TasksData) => {
     try {
       const dataWithStats = {
@@ -87,12 +90,19 @@ export const useTaskManagerEnhanced = () => {
         stats: calculateStats(newData.tasks)
       };
       
-      await saveData('productivity-tasks', dataWithStats);
-      setTasksData(dataWithStats);
+      console.log('💾 Sauvegarde des tâches...', dataWithStats.tasks.length);
+      const success = await saveData('productivity-tasks', dataWithStats);
       
-      return true;
+      if (success) {
+        setTasksData(dataWithStats);
+        console.log('✅ Tâches sauvegardées avec succès');
+      } else {
+        throw new Error('Échec de la sauvegarde');
+      }
+      
+      return success;
     } catch (error) {
-      console.error('Erreur sauvegarde tâches:', error);
+      console.error('❌ Erreur sauvegarde tâches:', error);
       toast({
         title: "Erreur de sauvegarde",
         description: "Impossible de sauvegarder les tâches",
@@ -102,8 +112,10 @@ export const useTaskManagerEnhanced = () => {
     }
   }, [saveData, calculateStats, toast]);
 
-  // CRUD operations
+  // CRUD operations avec logging
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('➕ Ajout d\'une nouvelle tâche:', taskData.title);
+    
     const newTask: Task = {
       ...taskData,
       id: Date.now().toString(),
@@ -111,10 +123,14 @@ export const useTaskManagerEnhanced = () => {
       updatedAt: new Date().toISOString()
     };
 
-    await saveTasksData({
+    const success = await saveTasksData({
       ...tasksData,
       tasks: [...tasksData.tasks, newTask]
     });
+
+    if (success) {
+      console.log('✅ Tâche ajoutée avec succès:', newTask.title);
+    }
   }, [tasksData, saveTasksData]);
 
   const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {

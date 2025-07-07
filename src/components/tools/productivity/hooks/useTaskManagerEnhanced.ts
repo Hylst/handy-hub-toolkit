@@ -44,6 +44,7 @@ export const useTaskManagerEnhanced = () => {
   
   const [tasksData, setTasksData] = useState<TasksData>(defaultTasksData);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -57,32 +58,35 @@ export const useTaskManagerEnhanced = () => {
     highPriorityTasks: tasks.filter(t => t.priority === 'high' && !t.completed).length
   }), []);
 
-  // Chargement initial avec gestion de version
+  // Chargement initial UNIQUE
   useEffect(() => {
+    if (hasLoadedOnce) return; // Éviter les rechargements multiples
+    
     const loadInitialData = async () => {
       try {
-        console.log('🔄 Chargement des données depuis Dexie...');
+        console.log('🔄 Chargement initial des tâches...');
         const data = await loadData('productivity-tasks');
         if (data && data.tasks) {
-          console.log(`✅ ${data.tasks.length} tâches chargées depuis Dexie`);
+          console.log(`✅ ${data.tasks.length} tâches chargées`);
           const stats = calculateStats(data.tasks);
           setTasksData({ ...data, stats });
         } else {
-          console.log('ℹ️ Aucune donnée trouvée, utilisation des données par défaut');
+          console.log('📝 Utilisation des données par défaut');
           setTasksData(defaultTasksData);
         }
       } catch (error) {
-        console.error('❌ Erreur chargement tâches:', error);
+        console.error('❌ Erreur chargement:', error);
         setTasksData(defaultTasksData);
       } finally {
         setIsLoading(false);
+        setHasLoadedOnce(true);
       }
     };
 
     loadInitialData();
-  }, [loadData, calculateStats]);
+  }, [hasLoadedOnce, loadData, calculateStats]);
 
-  // Sauvegarde immédiate à chaque changement
+  // Sauvegarde optimisée
   const saveTasksData = useCallback(async (newData: TasksData) => {
     try {
       const dataWithStats = {
@@ -90,19 +94,18 @@ export const useTaskManagerEnhanced = () => {
         stats: calculateStats(newData.tasks)
       };
       
-      console.log('💾 Sauvegarde des tâches...', dataWithStats.tasks.length);
+      console.log('💾 Sauvegarde de', dataWithStats.tasks.length, 'tâches');
       const success = await saveData('productivity-tasks', dataWithStats);
       
       if (success) {
         setTasksData(dataWithStats);
-        console.log('✅ Tâches sauvegardées avec succès');
+        console.log('✅ Tâches sauvegardées');
+        return true;
       } else {
         throw new Error('Échec de la sauvegarde');
       }
-      
-      return success;
     } catch (error) {
-      console.error('❌ Erreur sauvegarde tâches:', error);
+      console.error('❌ Erreur sauvegarde:', error);
       toast({
         title: "Erreur de sauvegarde",
         description: "Impossible de sauvegarder les tâches",
@@ -112,24 +115,32 @@ export const useTaskManagerEnhanced = () => {
     }
   }, [saveData, calculateStats, toast]);
 
-  // CRUD operations avec logging
+  // Ajout de tâche corrigé
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    console.log('➕ Ajout d\'une nouvelle tâche:', taskData.title);
+    console.log('➕ Ajout tâche:', taskData.title);
     
     const newTask: Task = {
       ...taskData,
-      id: Date.now().toString(),
+      id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    const success = await saveTasksData({
+    // Créer les nouvelles données
+    const newTasksData = {
       ...tasksData,
       tasks: [...tasksData.tasks, newTask]
-    });
+    };
 
+    // Sauvegarder immédiatement
+    const success = await saveTasksData(newTasksData);
+    
     if (success) {
-      console.log('✅ Tâche ajoutée avec succès:', newTask.title);
+      console.log('✅ Tâche ajoutée:', newTask.title);
+      return newTask;
+    } else {
+      console.error('❌ Échec ajout tâche');
+      return null;
     }
   }, [tasksData, saveTasksData]);
 
@@ -171,7 +182,6 @@ export const useTaskManagerEnhanced = () => {
     }
   }, [tasksData, saveTasksData]);
 
-  // Fonction "Diviser" améliorée - divise une tâche en sous-tâches basées sur sa description
   const splitTaskIntoSubtasks = useCallback(async (task: Task) => {
     try {
       // Si la description contient des lignes avec des puces ou des numéros, on les utilise

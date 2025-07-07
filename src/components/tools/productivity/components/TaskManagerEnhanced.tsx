@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ export const TaskManagerEnhanced = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [keywordFilter, setKeywordFilter] = useState('');
   const [sortByKeywords, setSortByKeywords] = useState(false);
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -63,41 +65,73 @@ export const TaskManagerEnhanced = () => {
     estimatedDuration: ''
   });
 
+  // Fonction de décomposition IA corrigée
   const handleAIDecomposition = async (subtasks: SubtaskData[]) => {
-    console.log(`🤖 Traitement de ${subtasks.length} sous-tâches générées par l'IA`);
+    console.log(`🤖 Décomposition IA: ${subtasks.length} sous-tâches à créer`);
+    setIsProcessingAI(true);
     
-    const baseTask = {
-      description: `Tâche parente décomposée par IA: ${newTask.title}`,
-      completed: false,
-      priority: newTask.priority,
-      category: newTask.category || 'Personnel',
-      tags: [...newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean), 'IA-décomposée'],
-      dueDate: newTask.dueDate || undefined
-    };
+    try {
+      const baseTask = {
+        description: `Tâche parente: ${newTask.title}`,
+        completed: false,
+        priority: newTask.priority,
+        category: newTask.category || 'Personnel',
+        tags: [...newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean), 'IA-générée'],
+        dueDate: newTask.dueDate || undefined
+      };
 
-    // Créer les sous-tâches dans l'ordre avec les données du LLM
-    for (let i = 0; i < subtasks.length; i++) {
-      const subtask = subtasks[i];
-      console.log(`📝 Création sous-tâche ${i + 1}/${subtasks.length}:`, subtask.title);
+      let createdCount = 0;
       
-      await addTask({
-        ...baseTask,
-        title: subtask.title,
-        description: subtask.description,
-        estimatedDuration: subtask.estimatedDuration,
-        priority: subtask.priority || newTask.priority,
-        tags: [...baseTask.tags, `ordre-${subtask.order || i + 1}`]
-      });
-    }
+      // Créer chaque sous-tâche individuellement
+      for (const [index, subtask] of subtasks.entries()) {
+        try {
+          console.log(`📝 Création sous-tâche ${index + 1}/${subtasks.length}:`, subtask.title);
+          
+          const taskToCreate = {
+            ...baseTask,
+            title: subtask.title,
+            description: subtask.description || `Sous-tâche ${index + 1} de: ${newTask.title}`,
+            estimatedDuration: subtask.estimatedDuration,
+            priority: subtask.priority || newTask.priority,
+            tags: [...baseTask.tags, `étape-${subtask.order || index + 1}`]
+          };
 
-    console.log(`✅ ${subtasks.length} sous-tâches créées avec succès`);
-    resetForm();
+          const createdTask = await addTask(taskToCreate);
+          
+          if (createdTask) {
+            createdCount++;
+            console.log(`✅ Sous-tâche créée: ${createdTask.title}`);
+          } else {
+            console.error(`❌ Échec création sous-tâche: ${subtask.title}`);
+          }
+          
+          // Petit délai entre les créations pour éviter les conflits
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (error) {
+          console.error(`❌ Erreur création sous-tâche ${index + 1}:`, error);
+        }
+      }
+
+      console.log(`🎉 Décomposition terminée: ${createdCount}/${subtasks.length} tâches créées`);
+      
+      if (createdCount > 0) {
+        resetForm();
+      }
+      
+      return createdCount;
+    } catch (error) {
+      console.error('❌ Erreur globale décomposition IA:', error);
+      return 0;
+    } finally {
+      setIsProcessingAI(false);
+    }
   };
 
   const handleAddTask = async () => {
     if (!newTask.title.trim()) return;
 
-    await addTask({
+    const taskData = {
       title: newTask.title,
       description: newTask.description,
       completed: false,
@@ -106,9 +140,12 @@ export const TaskManagerEnhanced = () => {
       tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       dueDate: newTask.dueDate || undefined,
       estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
-    });
+    };
 
-    resetForm();
+    const created = await addTask(taskData);
+    if (created) {
+      resetForm();
+    }
   };
 
   const handleUpdateTask = async () => {
@@ -239,6 +276,7 @@ export const TaskManagerEnhanced = () => {
               }
             }}
             className="w-full sm:w-auto"
+            disabled={isProcessingAI}
           >
             <Plus className="w-4 h-4 mr-2" />
             {showAddForm ? 'Annuler' : 'Nouvelle tâche'}

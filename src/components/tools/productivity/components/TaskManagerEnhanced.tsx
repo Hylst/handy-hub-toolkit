@@ -16,6 +16,8 @@ interface SubtaskData {
   title: string;
   description: string;
   estimatedDuration?: number;
+  priority?: 'low' | 'medium' | 'high';
+  order?: number;
 }
 
 export const TaskManagerEnhanced = () => {
@@ -62,8 +64,10 @@ export const TaskManagerEnhanced = () => {
   });
 
   const handleAIDecomposition = async (subtasks: SubtaskData[]) => {
+    console.log(`🤖 Traitement de ${subtasks.length} sous-tâches générées par l'IA`);
+    
     const baseTask = {
-      description: `Tâche parente: ${newTask.title}`,
+      description: `Tâche parente décomposée par IA: ${newTask.title}`,
       completed: false,
       priority: newTask.priority,
       category: newTask.category || 'Personnel',
@@ -71,16 +75,22 @@ export const TaskManagerEnhanced = () => {
       dueDate: newTask.dueDate || undefined
     };
 
-    // Créer les sous-tâches avec les données du LLM
-    for (const subtask of subtasks) {
+    // Créer les sous-tâches dans l'ordre avec les données du LLM
+    for (let i = 0; i < subtasks.length; i++) {
+      const subtask = subtasks[i];
+      console.log(`📝 Création sous-tâche ${i + 1}/${subtasks.length}:`, subtask.title);
+      
       await addTask({
         ...baseTask,
         title: subtask.title,
         description: subtask.description,
-        estimatedDuration: subtask.estimatedDuration
+        estimatedDuration: subtask.estimatedDuration,
+        priority: subtask.priority || newTask.priority,
+        tags: [...baseTask.tags, `ordre-${subtask.order || i + 1}`]
       });
     }
 
+    console.log(`✅ ${subtasks.length} sous-tâches créées avec succès`);
     resetForm();
   };
 

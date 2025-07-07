@@ -7,14 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Scissors, Sparkles, Calendar, Tag, AlertCircle, Clock } from 'lucide-react';
+import { Plus, Scissors, Sparkles, Calendar, Tag, AlertCircle, Clock, Brain } from 'lucide-react';
 import { useLLMManager } from '../hooks/useLLMManager';
 import { Task } from '../hooks/useTaskManagerEnhanced';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubtaskData {
   title: string;
   description: string;
   estimatedDuration?: number;
+  priority?: 'low' | 'medium' | 'high';
+  order?: number;
 }
 
 interface TaskFormProps {
@@ -47,27 +50,66 @@ export const TaskForm = ({
   onAIDecompose
 }: TaskFormProps) => {
   const [isDecomposing, setIsDecomposing] = useState(false);
-  const { decomposeTaskWithAI, isLoading: isLLMLoading } = useLLMManager();
+  const { decomposeTaskWithAI, isLoading: isLLMLoading, hasConfiguredProvider } = useLLMManager();
+  const { toast } = useToast();
 
   const handleAIDecompose = async () => {
-    if (!newTask.title.trim()) return;
+    if (!newTask.title.trim()) {
+      toast({
+        title: "Titre requis",
+        description: "Veuillez saisir un titre pour la tâche avant de la décomposer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!hasConfiguredProvider) {
+      toast({
+        title: "Configuration requise",
+        description: "Veuillez configurer une clé API LLM dans les paramètres pour utiliser l'IA",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsDecomposing(true);
     try {
+      console.log('🧠 Démarrage de la décomposition IA pour:', newTask.title);
+      
       const result = await decomposeTaskWithAI({
         taskTitle: newTask.title,
         taskDescription: newTask.description,
         tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         priority: newTask.priority,
         category: newTask.category,
-        estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
+        estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined,
+        context: `Catégorie: ${newTask.category}, Tags: ${newTask.tags}`
       });
       
       if (result.success && result.subtasks.length > 0) {
+        console.log(`✅ ${result.subtasks.length} sous-tâches générées par l'IA`);
+        
+        toast({
+          title: "Décomposition réussie",
+          description: `${result.subtasks.length} sous-tâches ont été générées par l'IA`,
+        });
+        
         await onAIDecompose(result.subtasks);
+      } else {
+        console.error('❌ Échec de la décomposition:', result.error);
+        toast({
+          title: "Erreur de décomposition",
+          description: result.error || "L'IA n'a pas pu décomposer cette tâche",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Erreur décomposition IA:', error);
+      console.error('❌ Erreur décomposition IA:', error);
+      toast({
+        title: "Erreur technique",
+        description: "Une erreur s'est produite lors de la décomposition",
+        variant: "destructive",
+      });
     } finally {
       setIsDecomposing(false);
     }
@@ -101,7 +143,7 @@ export const TaskForm = ({
             Description
           </label>
           <Textarea
-            placeholder="Description détaillée... (utilisez des listes avec - ou 1. pour faciliter la division)"
+            placeholder="Description détaillée... (plus c'est détaillé, mieux l'IA pourra décomposer)"
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             className="min-h-20 border-blue-200 focus:border-blue-400"
@@ -191,8 +233,9 @@ export const TaskForm = ({
           </label>
           <Input
             type="number"
-            min="1"
-            placeholder="Ex: 60 pour 1 heure"
+            min="5"
+            max="1440"
+            placeholder="Ex: 120 pour 2 heures"
             value={newTask.estimatedDuration}
             onChange={(e) => setNewTask({ ...newTask, estimatedDuration: e.target.value })}
             className="border-blue-200 focus:border-blue-400"
@@ -224,17 +267,23 @@ export const TaskForm = ({
           <Button 
             variant="outline" 
             onClick={handleAIDecompose}
-            disabled={isDecomposing || isLLMLoading || !newTask.title.trim()}
-            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            disabled={isDecomposing || isLLMLoading || !newTask.title.trim() || !hasConfiguredProvider}
+            className="border-purple-300 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
-            {isDecomposing ? 'Décomposition...' : 'IA Décomposer'}
+            <Brain className="w-4 h-4 mr-2" />
+            {isDecomposing ? 'IA en cours...' : 'IA Décomposer (3-10 tâches)'}
           </Button>
         </div>
 
-        {/* Note sur la configuration LLM */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded">
-          💡 Pour configurer vos clés API LLM, accédez aux <strong>Paramètres</strong> via le menu latéral.
+        {/* Informations sur la configuration LLM */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg space-y-1">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            <strong>Décomposition IA intelligente</strong>
+          </div>
+          <p>• L'IA analysera votre tâche et créera 3 à 10 sous-tâches détaillées</p>
+          <p>• Plus votre description est précise, meilleure sera la décomposition</p>
+          <p>• {hasConfiguredProvider ? '✅ API configurée' : '⚠️ Configurez vos clés API dans les Paramètres'}</p>
         </div>
       </CardContent>
     </Card>

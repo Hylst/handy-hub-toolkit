@@ -9,7 +9,7 @@ import { CheckSquare, Plus, Calendar, Trash2 } from "lucide-react";
 import { useTaskManager, Task } from "../hooks/useTaskManager";
 
 export const TaskManager = () => {
-  const { tasks, addTask, toggleTask, deleteTask, getTaskStats } = useTaskManager();
+  const { tasks, addTask, toggleTask, deleteTask, stats } = useTaskManager();
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -18,7 +18,7 @@ export const TaskManager = () => {
     dueDate: ""
   });
 
-  const stats = getTaskStats();
+  // Stats disponibles directement
 
   const handleAddTask = () => {
     if (!newTask.title.trim()) return;
@@ -28,7 +28,9 @@ export const TaskManager = () => {
       description: newTask.description,
       priority: newTask.priority,
       category: newTask.category,
-      dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined
+      dueDate: newTask.dueDate || undefined,
+      completed: false,
+      tags: []
     });
     
     setNewTask({
@@ -65,7 +67,7 @@ export const TaskManager = () => {
           <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">En cours</p>
         </div>
         <div className="p-3 lg:p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
-          <p className="text-lg lg:text-2xl font-bold text-purple-600">{Math.round(stats.completionRate)}%</p>
+          <p className="text-lg lg:text-2xl font-bold text-purple-600">{Math.round((stats.completedTasks / stats.totalTasks) * 100) || 0}%</p>
           <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Taux</p>
         </div>
       </div>
@@ -175,7 +177,7 @@ export const TaskManager = () => {
                           {task.dueDate && (
                             <Badge variant="outline" className="text-xs">
                               <Calendar className="w-3 h-3 mr-1" />
-                              {task.dueDate.toLocaleDateString("fr-FR")}
+                              {new Date(task.dueDate).toLocaleDateString("fr-FR")}
                             </Badge>
                           )}
                         </div>

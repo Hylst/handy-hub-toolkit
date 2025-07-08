@@ -3,24 +3,16 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CheckSquare, Plus, AlertTriangle, RefreshCw } from 'lucide-react';
-import { useTaskManagerEnhanced, Task } from '../hooks/useTaskManagerEnhanced';
+import { CheckSquare, Plus, AlertTriangle } from 'lucide-react';
+import { useTaskManager, Task } from '../hooks/useTaskManager';
 import { DataImportExport } from '../../common/DataImportExport';
 import { ToolInfoModal } from './ToolInfoModal';
 import { TaskStats } from './TaskStats';
 import { TaskFilters } from './TaskFilters';
 import { KeywordAnalysis } from './KeywordAnalysis';
-import { TaskForm } from './TaskForm';
+import { TaskFormSimplified } from './TaskFormSimplified';
 import { TaskList } from './TaskList';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-interface SubtaskData {
-  title: string;
-  description: string;
-  estimatedDuration?: number;
-  priority?: 'low' | 'medium' | 'high';
-  order?: number;
-}
 
 export const TaskManagerEnhanced = () => {
   const {
@@ -31,7 +23,6 @@ export const TaskManagerEnhanced = () => {
     updateTask,
     deleteTask,
     toggleTask,
-    splitTaskIntoSubtasks,
     searchTerm,
     setSearchTerm,
     filterCategory,
@@ -41,23 +32,13 @@ export const TaskManagerEnhanced = () => {
     filterStatus,
     setFilterStatus,
     isLoading,
-    isOnline,
-    isSyncing,
-    lastSyncTime,
-    exportData,
-    importData,
-    resetData,
-    exportToGoogleTasks,
-    exportToICalendar,
-    forceRefresh
-  } = useTaskManagerEnhanced();
+    loadTasks
+  } = useTaskManager();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [keywordFilter, setKeywordFilter] = useState('');
   const [sortByKeywords, setSortByKeywords] = useState(false);
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -68,101 +49,20 @@ export const TaskManagerEnhanced = () => {
     estimatedDuration: ''
   });
 
-  // Fonction de décomposition IA avec gestion d'erreur améliorée et rafraîchissement forcé
-  const handleAIDecomposition = async (subtasks: SubtaskData[]) => {
-    console.log(`🤖 Décomposition IA: ${subtasks.length} sous-tâches à créer`);
-    setIsProcessingAI(true);
-    setLastError(null);
+  const handleSuccess = async () => {
+    // Réinitialiser filtres et formulaire
+    setSearchTerm('');
+    setFilterCategory('all');
+    setFilterPriority('all');
+    setFilterStatus('all');
+    setKeywordFilter('');
+    setSortByKeywords(false);
+    resetForm();
     
-    try {
-      if (!subtasks || subtasks.length === 0) {
-        throw new Error('Aucune sous-tâche à créer');
-      }
-
-      const baseTask = {
-        description: `Tâche parente: ${newTask.title}`,
-        completed: false,
-        priority: newTask.priority,
-        category: newTask.category || 'Personnel',
-        tags: [...newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean), 'IA-générée'],
-        dueDate: newTask.dueDate || undefined
-      };
-
-      let createdCount = 0;
-      const errors: string[] = [];
-      
-      // Créer chaque sous-tâche avec retry
-      for (const [index, subtask] of subtasks.entries()) {
-        try {
-          console.log(`📝 Création sous-tâche ${index + 1}/${subtasks.length}:`, subtask.title);
-          
-          const taskToCreate = {
-            ...baseTask,
-            title: subtask.title?.trim() || `Sous-tâche ${index + 1}`,
-            description: subtask.description?.trim() || `Sous-tâche ${index + 1} de: ${newTask.title}`,
-            estimatedDuration: subtask.estimatedDuration || 30,
-            priority: subtask.priority || newTask.priority,
-            tags: [...baseTask.tags, `étape-${subtask.order || index + 1}`]
-          };
-
-          // Validation des données
-          if (taskToCreate.title.length < 3) {
-            throw new Error(`Titre trop court: "${taskToCreate.title}"`);
-          }
-
-          const createdTask = await addTask(taskToCreate);
-          
-          if (createdTask) {
-            createdCount++;
-            console.log(`✅ Sous-tâche créée: ${createdTask.title}`);
-          } else {
-            errors.push(`Échec création: ${taskToCreate.title}`);
-          }
-          
-          // Délai entre les créations pour éviter les conflits
-          if (index < subtasks.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-          
-        } catch (error) {
-          const errorMsg = `Erreur création sous-tâche ${index + 1}: ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
-          console.error(`❌ ${errorMsg}`);
-          errors.push(errorMsg);
-        }
-      }
-
-      console.log(`🎉 Décomposition terminée: ${createdCount}/${subtasks.length} tâches créées`);
-      
-      if (createdCount > 0) {
-        // Réinitialiser tous les filtres pour afficher les nouvelles tâches
-        setSearchTerm('');
-        setFilterCategory('all');
-        setFilterPriority('all');
-        setFilterStatus('all');
-        setKeywordFilter('');
-        setSortByKeywords(false);
-        
-        // Forcer le rafraîchissement des données
-        await forceRefresh();
-        
-        resetForm();
-        
-        if (errors.length > 0) {
-          setLastError(`${createdCount} tâches créées, ${errors.length} erreurs: ${errors.slice(0, 2).join(', ')}`);
-        }
-      } else {
-        throw new Error(`Aucune sous-tâche créée. Erreurs: ${errors.slice(0, 3).join(', ')}`);
-      }
-      
-      return createdCount;
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue lors de la décomposition';
-      console.error('❌ Erreur globale décomposition IA:', errorMsg);
-      setLastError(errorMsg);
-      return 0;
-    } finally {
-      setIsProcessingAI(false);
-    }
+    // Recharger les données
+    setTimeout(async () => {
+      await loadTasks();
+    }, 500);
   };
 
   const handleAddTask = async () => {
@@ -179,12 +79,7 @@ export const TaskManagerEnhanced = () => {
       estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
     };
 
-    const created = await addTask(taskData);
-    if (created) {
-      // Forcer le rafraîchissement après création
-      await forceRefresh();
-      resetForm();
-    }
+    await addTask(taskData);
   };
 
   const handleUpdateTask = async () => {
@@ -199,10 +94,6 @@ export const TaskManagerEnhanced = () => {
       dueDate: newTask.dueDate || undefined,
       estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
     });
-
-    // Forcer le rafraîchissement après mise à jour
-    await forceRefresh();
-    resetForm();
   };
 
   const startEdit = (task: Task) => {
@@ -222,7 +113,6 @@ export const TaskManagerEnhanced = () => {
   const resetForm = () => {
     setEditingTask(null);
     setShowAddForm(false);
-    setLastError(null);
     setNewTask({
       title: '',
       description: '',
@@ -234,27 +124,14 @@ export const TaskManagerEnhanced = () => {
     });
   };
 
-  const handleSplitTask = async () => {
-    if (editingTask) {
-      const success = await splitTaskIntoSubtasks(editingTask);
-      if (success) {
-        await forceRefresh();
-        resetForm();
-      }
-    }
-  };
-
   const handleToggleTask = async (taskId: string) => {
     await toggleTask(taskId);
-    // Petit délai puis rafraîchissement pour s'assurer que le changement est visible
-    setTimeout(async () => {
-      await forceRefresh();
-    }, 100);
+    setTimeout(() => loadTasks(), 200);
   };
 
   const handleDeleteTask = async (taskId: string) => {
     await deleteTask(taskId);
-    await forceRefresh();
+    setTimeout(() => loadTasks(), 200);
   };
 
   // Chargement avec indicateur amélioré
@@ -298,42 +175,11 @@ export const TaskManagerEnhanced = () => {
             <div className="flex items-center gap-3">
               <CheckSquare className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
               Gestionnaire de Tâches Avancé
-              {isSyncing && <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />}
-              {!isOnline && <AlertTriangle className="w-4 h-4 text-orange-500" />}
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={forceRefresh}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Actualiser
-              </Button>
-              <ToolInfoModal toolType="tasks" />
-            </div>
+            <ToolInfoModal toolType="tasks" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
-          {/* Alerte d'erreur */}
-          {lastError && (
-            <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/50">
-              <AlertTriangle className="w-4 h-4 text-orange-600" />
-              <AlertDescription className="text-orange-700 dark:text-orange-300">
-                {lastError}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setLastError(null)}
-                  className="ml-2 h-auto p-0 text-orange-600 hover:text-orange-800"
-                >
-                  ✕
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* Statistiques */}
           <TaskStats stats={stats} />
@@ -372,7 +218,6 @@ export const TaskManagerEnhanced = () => {
               }
             }}
             className="w-full sm:w-auto"
-            disabled={isProcessingAI}
           >
             <Plus className="w-4 h-4 mr-2" />
             {showAddForm ? 'Annuler' : 'Nouvelle tâche'}
@@ -380,15 +225,14 @@ export const TaskManagerEnhanced = () => {
 
           {/* Formulaire d'ajout/édition */}
           {showAddForm && (
-            <TaskForm
+            <TaskFormSimplified
               isEditing={!!editingTask}
               editingTask={editingTask}
               newTask={newTask}
               setNewTask={setNewTask}
-              categories={categories}
               onSubmit={editingTask ? handleUpdateTask : handleAddTask}
-              onSplit={editingTask ? handleSplitTask : undefined}
-              onAIDecompose={handleAIDecomposition}
+              onTaskCreate={addTask}
+              onSuccess={handleSuccess}
             />
           )}
 
@@ -426,18 +270,10 @@ export const TaskManagerEnhanced = () => {
         </CardContent>
       </Card>
 
-      {/* Import/Export avec formats spécialisés */}
-      <DataImportExport
-        onExport={exportData}
-        onImport={importData}
-        onReset={resetData}
-        isOnline={isOnline}
-        isSyncing={isSyncing}
-        lastSyncTime={lastSyncTime}
-        toolName="Tâches"
-        onExportGoogleTasks={exportToGoogleTasks}
-        onExportICalendar={exportToICalendar}
-      />
+      {/* Import/Export */}
+      <div className="text-center text-sm text-gray-500">
+        Fonctionnalités d'import/export disponibles dans les paramètres
+      </div>
     </div>
   );
 };

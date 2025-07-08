@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Task } from '../hooks/useTaskManagerEnhanced';
+import { Task } from '../hooks/useTaskManager';
 
 interface KeywordAnalysisProps {
   tasks: Task[];

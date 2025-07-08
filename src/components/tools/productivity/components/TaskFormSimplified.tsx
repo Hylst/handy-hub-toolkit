@@ -7,17 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Scissors, Brain, Calendar, Tag, AlertCircle, Clock, CheckCircle } from 'lucide-react';
-import { useLLMManager } from '../hooks/useLLMManager';
-import { Task } from '../hooks/useTaskManagerEnhanced';
+import { Task } from '../hooks/useTaskManager';
+import { useTaskDecomposition } from '../hooks/useTaskDecomposition';
+import { CategoryPresets } from './CategoryPresets';
 import { useToast } from '@/hooks/use-toast';
-
-interface SubtaskData {
-  title: string;
-  description: string;
-  estimatedDuration?: number;
-  priority?: 'low' | 'medium' | 'high';
-  order?: number;
-}
 
 interface TaskFormProps {
   isEditing: boolean;
@@ -32,52 +25,26 @@ interface TaskFormProps {
     estimatedDuration: string;
   };
   setNewTask: (task: any) => void;
-  categories: string[];
   onSubmit: () => void;
   onSplit?: () => void;
-  onAIDecompose: (subtasks: SubtaskData[]) => void;
+  onTaskCreate: (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task | null>;
+  onSuccess?: () => void;
 }
 
-export const TaskForm = ({
+export const TaskFormSimplified = ({
   isEditing,
   editingTask,
   newTask,
   setNewTask,
-  categories,
   onSubmit,
   onSplit,
-  onAIDecompose
+  onTaskCreate,
+  onSuccess
 }: TaskFormProps) => {
-  const [isDecomposing, setIsDecomposing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const { decomposeTaskWithAI, isLoading: isLLMLoading, hasConfiguredProvider } = useLLMManager();
+  const { decomposeWithAI, splitTask, isProcessing, hasConfiguredProvider } = useTaskDecomposition();
   const { toast } = useToast();
-
-  // Catégories enrichies et uniques
-  const enrichedCategories = [
-    'Personnel',
-    'Travail', 
-    'Projets',
-    'Urgent',
-    'Formation',
-    'Santé & Bien-être',
-    'Finance',
-    'Maison & Famille',
-    'Créatif',
-    'Voyage',
-    'Technologie',
-    'Sport & Fitness',
-    'Administration',
-    'Achats',
-    'Événements',
-    'Maintenance',
-    'Recherche',
-    'Communication'
-  ];
-
-  // Fusionner et dédupliquer les catégories
-  const allCategories = Array.from(new Set([...enrichedCategories, ...categories]));
 
   const validateForm = (): boolean => {
     const errors: string[] = [];
@@ -86,12 +53,6 @@ export const TaskForm = ({
       errors.push('Le titre est obligatoire');
     } else if (newTask.title.trim().length < 3) {
       errors.push('Le titre doit contenir au moins 3 caractères');
-    } else if (newTask.title.length > 200) {
-      errors.push('Le titre ne peut pas dépasser 200 caractères');
-    }
-    
-    if (newTask.description && newTask.description.length > 1000) {
-      errors.push('La description ne peut pas dépasser 1000 caractères');
     }
     
     if (newTask.estimatedDuration) {
@@ -118,7 +79,7 @@ export const TaskForm = ({
     setIsSubmitting(true);
     try {
       await onSubmit();
-      console.log('✅ Soumission du formulaire réussie');
+      onSuccess?.();
     } catch (error) {
       console.error('❌ Erreur soumission:', error);
       toast({
@@ -132,60 +93,26 @@ export const TaskForm = ({
   };
 
   const handleAIDecompose = async () => {
-    if (!validateForm()) {
-      toast({
-        title: "Formulaire invalide",
-        description: "Corrigez les erreurs avant de décomposer",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
-    if (!hasConfiguredProvider) {
+    const result = await decomposeWithAI(newTask, onTaskCreate);
+    
+    if (result.success) {
+      // Réinitialiser les filtres et rafraîchir
+      onSuccess?.();
       toast({
-        title: "Configuration requise",
-        description: "Veuillez configurer une clé API LLM dans les paramètres",
-        variant: "destructive",
+        title: "Décomposition terminée",
+        description: `${result.count} sous-tâches créées avec succès`,
       });
-      return;
     }
+  };
 
-    setIsDecomposing(true);
-    try {
-      console.log('🧠 Démarrage de la décomposition IA pour:', newTask.title);
-      
-      const result = await decomposeTaskWithAI({
-        taskTitle: newTask.title.trim(),
-        taskDescription: newTask.description.trim(),
-        tags: newTask.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        priority: newTask.priority,
-        category: newTask.category || 'Personnel',
-        estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined,
-        context: `Catégorie: ${newTask.category || 'Non définie'}, Tags: ${newTask.tags || 'Aucun'}`
-      });
-      
-      if (result.success && result.subtasks.length > 0) {
-        console.log(`✅ ${result.subtasks.length} sous-tâches générées par l'IA`);
-        
-        toast({
-          title: "Décomposition réussie",
-          description: `${result.subtasks.length} sous-tâches vont être créées`,
-        });
-        
-        // Appeler la fonction de décomposition avec les sous-tâches
-        await onAIDecompose(result.subtasks);
-      } else {
-        throw new Error(result.error || "L'IA n'a pas pu décomposer cette tâche");
-      }
-    } catch (error) {
-      console.error('❌ Erreur décomposition IA:', error);
-      toast({
-        title: "Erreur de décomposition",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDecomposing(false);
+  const handleSplit = async () => {
+    if (!editingTask) return;
+    
+    const success = await splitTask(editingTask, onTaskCreate);
+    if (success) {
+      onSuccess?.();
     }
   };
 
@@ -213,53 +140,44 @@ export const TaskForm = ({
           </div>
         )}
 
-        {/* Titre avec validation */}
+        {/* Titre */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Titre * 
-            <span className="text-xs text-gray-500">
-              ({newTask.title.length}/200)
-            </span>
+            Titre * <span className="text-xs text-gray-500">({newTask.title.length}/200)</span>
           </label>
           <Input
-            placeholder="Titre de la tâche... (ex: Créer une présentation marketing)"
+            placeholder="Titre de la tâche..."
             value={newTask.title}
             onChange={(e) => {
               setNewTask({ ...newTask, title: e.target.value });
               setValidationErrors([]);
             }}
-            className={`border-blue-200 focus:border-blue-400 ${
-              validationErrors.some(e => e.includes('titre')) ? 'border-red-300' : ''
-            }`}
-            autoComplete="off"
-            name="task-title"
+            className="border-blue-200 focus:border-blue-400"
             maxLength={200}
           />
         </div>
 
-        {/* Description avec validation */}
+        {/* Description */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description
-            <span className="text-xs text-gray-500">
-              ({newTask.description.length}/1000)
-            </span>
+            Description <span className="text-xs text-gray-500">({newTask.description.length}/1000)</span>
           </label>
           <Textarea
-            placeholder="Description détaillée... Plus c'est détaillé, mieux l'IA pourra décomposer la tâche en sous-étapes logiques."
+            placeholder="Description détaillée pour une meilleure décomposition IA..."
             value={newTask.description}
-            onChange={(e) => {
-              setNewTask({ ...newTask, description: e.target.value });
-              setValidationErrors([]);
-            }}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             className="min-h-20 border-blue-200 focus:border-blue-400"
-            autoComplete="off"
-            name="task-description"
             maxLength={1000}
           />
         </div>
 
-        {/* Ligne 1: Priorité et Catégorie */}
+        {/* Catégories avec couleurs */}
+        <CategoryPresets 
+          onCategorySelect={(category) => setNewTask({ ...newTask, category })}
+          selectedCategory={newTask.category}
+        />
+
+        {/* Ligne 1: Priorité et Tags */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
@@ -285,39 +203,21 @@ export const TaskForm = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Catégorie
-            </label>
-            <Select value={newTask.category} onValueChange={(value) => setNewTask({ ...newTask, category: value })}>
-              <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                <SelectValue placeholder="Sélectionner une catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                {allCategories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Ligne 2: Tags et Date d'échéance */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
               <Tag className="w-4 h-4" />
               Tags (séparés par des virgules)
             </label>
             <Input
-              placeholder="important, urgent, projet..."
+              placeholder="urgent, important, projet..."
               value={newTask.tags}
               onChange={(e) => setNewTask({ ...newTask, tags: e.target.value })}
               className="border-blue-200 focus:border-blue-400"
-              autoComplete="off"
-              name="task-tags"
             />
           </div>
+        </div>
 
+        {/* Ligne 2: Date et Durée */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
               <Calendar className="w-4 h-4" />
@@ -328,34 +228,24 @@ export const TaskForm = ({
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
               className="border-blue-200 focus:border-blue-400"
-              autoComplete="off"
-              name="task-due-date"
             />
           </div>
-        </div>
 
-        {/* Durée estimée avec validation */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            Durée estimée (minutes)
-          </label>
-          <Input
-            type="number"
-            min="1"
-            max="1440"
-            placeholder="Ex: 120 pour 2 heures"
-            value={newTask.estimatedDuration}
-            onChange={(e) => {
-              setNewTask({ ...newTask, estimatedDuration: e.target.value });
-              setValidationErrors([]);
-            }}
-            className={`border-blue-200 focus:border-blue-400 ${
-              validationErrors.some(e => e.includes('durée')) ? 'border-red-300' : ''
-            }`}
-            autoComplete="off"
-            name="task-duration"
-          />
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              Durée estimée (minutes)
+            </label>
+            <Input
+              type="number"
+              min="1"
+              max="1440"
+              placeholder="120"
+              value={newTask.estimatedDuration}
+              onChange={(e) => setNewTask({ ...newTask, estimatedDuration: e.target.value })}
+              className="border-blue-200 focus:border-blue-400"
+            />
+          </div>
         </div>
 
         <Separator />
@@ -364,7 +254,7 @@ export const TaskForm = ({
         <div className="flex flex-wrap gap-2">
           <Button 
             onClick={handleSubmit}
-            disabled={isSubmitting || isDecomposing}
+            disabled={isSubmitting || isProcessing}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {isSubmitting ? (
@@ -383,8 +273,8 @@ export const TaskForm = ({
           {isEditing && onSplit && (
             <Button 
               variant="outline" 
-              onClick={onSplit}
-              disabled={isSubmitting || isDecomposing}
+              onClick={handleSplit}
+              disabled={isSubmitting || isProcessing}
               className="border-orange-300 text-orange-700 hover:bg-orange-50"
             >
               <Scissors className="w-4 h-4 mr-2" />
@@ -395,10 +285,10 @@ export const TaskForm = ({
           <Button 
             variant="outline" 
             onClick={handleAIDecompose}
-            disabled={isDecomposing || isLLMLoading || !newTask.title.trim() || !hasConfiguredProvider || isSubmitting}
-            className="border-purple-300 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
+            disabled={isProcessing || !newTask.title.trim() || !hasConfiguredProvider || isSubmitting}
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
           >
-            {isDecomposing ? (
+            {isProcessing ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
                 IA en cours...
@@ -406,22 +296,20 @@ export const TaskForm = ({
             ) : (
               <>
                 <Brain className="w-4 h-4 mr-2" />
-                IA Décomposer (4-8 sous-tâches)
+                IA Décomposer
               </>
             )}
           </Button>
         </div>
 
-        {/* Informations sur la configuration LLM */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg space-y-1">
-          <div className="flex items-center gap-2">
+        {/* Info IA */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+          <div className="flex items-center gap-2 mb-1">
             <Brain className="w-4 h-4" />
-            <strong>Décomposition IA ultra-intelligente</strong>
+            <strong>Décomposition IA intelligente</strong>
           </div>
-          <p>• L'IA analysera votre tâche et créera 4 à 8 sous-tâches détaillées et ordonnées</p>
-          <p>• Plus votre description est précise, meilleure sera la décomposition</p>
-          <p>• Toutes les sous-tâches seront automatiquement sauvegardées individuellement</p>
-          <p>• {hasConfiguredProvider ? '✅ API configurée et prête' : '⚠️ Configurez vos clés API dans les Paramètres'}</p>
+          <p>• {hasConfiguredProvider ? '✅ API configurée' : '⚠️ Configurez vos clés API'}</p>
+          <p>• L'IA créera 4-8 sous-tâches détaillées automatiquement</p>
         </div>
       </CardContent>
     </Card>

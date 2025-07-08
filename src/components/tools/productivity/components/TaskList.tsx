@@ -1,6 +1,6 @@
 
 import { CheckSquare } from 'lucide-react';
-import { Task } from '../hooks/useTaskManagerEnhanced';
+import { Task } from '../hooks/useTaskManager';
 import { TaskCard } from './TaskCard';
 
 interface TaskListProps {

@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Tag, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Task } from '../hooks/useTaskManagerEnhanced';
+import { Task } from '../hooks/useTaskManager';
 
 interface TaskCardProps {
   task: Task;

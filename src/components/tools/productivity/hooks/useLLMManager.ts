@@ -36,6 +36,44 @@ interface DecompositionResult {
   error?: string;
 }
 
+// Standalone function to generate emergency subtasks
+const generateEmergencySubtasks = (request: DecompositionRequest): SubtaskData[] => {
+  const baseTitle = request.taskTitle;
+  const totalDuration = request.estimatedDuration || 120;
+  const avgDuration = Math.round(totalDuration / 4);
+  
+  return [
+    {
+      title: `${baseTitle} - Phase 1: Analyse`,
+      description: 'Analyser les exigences et définir les objectifs',
+      estimatedDuration: avgDuration,
+      priority: 'high' as const,
+      order: 1
+    },
+    {
+      title: `${baseTitle} - Phase 2: Préparation`,
+      description: 'Préparer les ressources et outils nécessaires',
+      estimatedDuration: avgDuration,
+      priority: 'medium' as const,
+      order: 2
+    },
+    {
+      title: `${baseTitle} - Phase 3: Exécution`,
+      description: 'Réaliser le travail principal',
+      estimatedDuration: avgDuration,
+      priority: 'high' as const,
+      order: 3
+    },
+    {
+      title: `${baseTitle} - Phase 4: Finalisation`,
+      description: 'Réviser, tester et finaliser',
+      estimatedDuration: avgDuration,
+      priority: 'medium' as const,
+      order: 4
+    }
+  ];
+};
+
 export const useLLMManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -196,8 +234,8 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, aucun texte avant ou après !`;
     } catch (error) {
       console.error('❌ Erreur décomposition IA:', error);
       
-      // Génération de sous-tâches de secours
-      const fallbackSubtasks = this.generateEmergencySubtasks(request);
+      // Génération de sous-tâches de secours en utilisant la fonction standalone
+      const fallbackSubtasks = generateEmergencySubtasks(request);
       
       return {
         success: true,
@@ -208,43 +246,6 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, aucun texte avant ou après !`;
       setIsLoading(false);
     }
   }, [defaultProvider]);
-
-  const generateEmergencySubtasks = (request: DecompositionRequest): SubtaskData[] => {
-    const baseTitle = request.taskTitle;
-    const totalDuration = request.estimatedDuration || 120;
-    const avgDuration = Math.round(totalDuration / 4);
-    
-    return [
-      {
-        title: `${baseTitle} - Phase 1: Analyse`,
-        description: 'Analyser les exigences et définir les objectifs',
-        estimatedDuration: avgDuration,
-        priority: 'high' as const,
-        order: 1
-      },
-      {
-        title: `${baseTitle} - Phase 2: Préparation`,
-        description: 'Préparer les ressources et outils nécessaires',
-        estimatedDuration: avgDuration,
-        priority: 'medium' as const,
-        order: 2
-      },
-      {
-        title: `${baseTitle} - Phase 3: Exécution`,
-        description: 'Réaliser le travail principal',
-        estimatedDuration: avgDuration,
-        priority: 'high' as const,
-        order: 3
-      },
-      {
-        title: `${baseTitle} - Phase 4: Finalisation`,
-        description: 'Réviser, tester et finaliser',
-        estimatedDuration: avgDuration,
-        priority: 'medium' as const,
-        order: 4
-      }
-    ];
-  };
 
   const callOpenAI = async (apiKey: string, prompt: string, selectedModel?: string | null): Promise<string> => {
     const model = selectedModel || 'gpt-4o';

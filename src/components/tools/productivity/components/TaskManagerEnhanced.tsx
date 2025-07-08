@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,8 @@ export const TaskManagerEnhanced = () => {
     importData,
     resetData,
     exportToGoogleTasks,
-    exportToICalendar
+    exportToICalendar,
+    forceRefresh
   } = useTaskManagerEnhanced();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -66,7 +68,7 @@ export const TaskManagerEnhanced = () => {
     estimatedDuration: ''
   });
 
-  // Fonction de décomposition IA avec gestion d'erreur améliorée
+  // Fonction de décomposition IA avec gestion d'erreur améliorée et rafraîchissement forcé
   const handleAIDecomposition = async (subtasks: SubtaskData[]) => {
     console.log(`🤖 Décomposition IA: ${subtasks.length} sous-tâches à créer`);
     setIsProcessingAI(true);
@@ -119,7 +121,7 @@ export const TaskManagerEnhanced = () => {
           
           // Délai entre les créations pour éviter les conflits
           if (index < subtasks.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
           
         } catch (error) {
@@ -132,6 +134,17 @@ export const TaskManagerEnhanced = () => {
       console.log(`🎉 Décomposition terminée: ${createdCount}/${subtasks.length} tâches créées`);
       
       if (createdCount > 0) {
+        // Réinitialiser tous les filtres pour afficher les nouvelles tâches
+        setSearchTerm('');
+        setFilterCategory('all');
+        setFilterPriority('all');
+        setFilterStatus('all');
+        setKeywordFilter('');
+        setSortByKeywords(false);
+        
+        // Forcer le rafraîchissement des données
+        await forceRefresh();
+        
         resetForm();
         
         if (errors.length > 0) {
@@ -168,6 +181,8 @@ export const TaskManagerEnhanced = () => {
 
     const created = await addTask(taskData);
     if (created) {
+      // Forcer le rafraîchissement après création
+      await forceRefresh();
       resetForm();
     }
   };
@@ -185,6 +200,8 @@ export const TaskManagerEnhanced = () => {
       estimatedDuration: newTask.estimatedDuration ? parseInt(newTask.estimatedDuration) : undefined
     });
 
+    // Forcer le rafraîchissement après mise à jour
+    await forceRefresh();
     resetForm();
   };
 
@@ -221,9 +238,23 @@ export const TaskManagerEnhanced = () => {
     if (editingTask) {
       const success = await splitTaskIntoSubtasks(editingTask);
       if (success) {
+        await forceRefresh();
         resetForm();
       }
     }
+  };
+
+  const handleToggleTask = async (taskId: string) => {
+    await toggleTask(taskId);
+    // Petit délai puis rafraîchissement pour s'assurer que le changement est visible
+    setTimeout(async () => {
+      await forceRefresh();
+    }, 100);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId);
+    await forceRefresh();
   };
 
   // Chargement avec indicateur amélioré
@@ -270,7 +301,19 @@ export const TaskManagerEnhanced = () => {
               {isSyncing && <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />}
               {!isOnline && <AlertTriangle className="w-4 h-4 text-orange-500" />}
             </div>
-            <ToolInfoModal toolType="tasks" />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={forceRefresh}
+                disabled={isLoading}
+                className="text-xs"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Actualiser
+              </Button>
+              <ToolInfoModal toolType="tasks" />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
@@ -357,9 +400,9 @@ export const TaskManagerEnhanced = () => {
             filterCategory={filterCategory}
             filterPriority={filterPriority}
             filterStatus={filterStatus}
-            onToggle={toggleTask}
+            onToggle={handleToggleTask}
             onEdit={startEdit}
-            onDelete={deleteTask}
+            onDelete={handleDeleteTask}
           />
 
           {/* Message si aucune tâche */}

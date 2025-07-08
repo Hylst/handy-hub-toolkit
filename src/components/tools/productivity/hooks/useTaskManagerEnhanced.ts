@@ -29,7 +29,20 @@ interface TasksData {
 
 const defaultTasksData: TasksData = {
   tasks: [],
-  categories: ['Travail', 'Personnel', 'Projets', 'Urgent'],
+  categories: [
+    'Travail', 
+    'Personnel', 
+    'Projets', 
+    'Urgent', 
+    'Formation', 
+    'Santé & Bien-être', 
+    'Finance', 
+    'Maison & Famille', 
+    'Créatif', 
+    'Voyage', 
+    'Technologie', 
+    'Sport & Fitness'
+  ],
   stats: {
     totalTasks: 0,
     completedTasks: 0,
@@ -57,6 +70,25 @@ export const useTaskManagerEnhanced = () => {
     pendingTasks: tasks.filter(t => !t.completed).length,
     highPriorityTasks: tasks.filter(t => t.priority === 'high' && !t.completed).length
   }), []);
+
+  // Fonction pour forcer le rafraîchissement des données
+  const forceRefresh = useCallback(async () => {
+    console.log('🔄 Rafraîchissement forcé des tâches...');
+    try {
+      const data = await loadData('productivity-tasks');
+      if (data && data.tasks && Array.isArray(data.tasks)) {
+        console.log(`✅ ${data.tasks.length} tâches rechargées`);
+        const stats = calculateStats(data.tasks);
+        setTasksData({ 
+          ...defaultTasksData,
+          ...data, 
+          stats 
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur rafraîchissement forcé:', error);
+    }
+  }, [loadData, calculateStats]);
 
   // Chargement initial avec retry et délai
   useEffect(() => {
@@ -99,14 +131,14 @@ export const useTaskManagerEnhanced = () => {
     loadInitialData();
   }, [hasLoadedOnce, loadData, calculateStats, toast]);
 
-  // Sauvegarde robuste avec retry
+  // Sauvegarde robuste avec retry et rafraîchissement automatique
   const saveTasksData = useCallback(async (newData: TasksData, retryCount = 0): Promise<boolean> => {
     try {
       const dataWithStats = {
         ...newData,
         stats: calculateStats(newData.tasks),
         lastModified: new Date().toISOString(),
-        version: '2.3.0'
+        version: '2.4.0'
       };
       
       console.log(`💾 Tentative sauvegarde ${retryCount + 1}: ${dataWithStats.tasks.length} tâches`);
@@ -116,6 +148,12 @@ export const useTaskManagerEnhanced = () => {
       if (success) {
         setTasksData(dataWithStats);
         console.log('✅ Sauvegarde réussie');
+        
+        // Rafraîchir automatiquement après sauvegarde
+        setTimeout(() => {
+          forceRefresh();
+        }, 500);
+        
         return true;
       } else {
         throw new Error('Échec de la sauvegarde');
@@ -123,8 +161,8 @@ export const useTaskManagerEnhanced = () => {
     } catch (error) {
       console.error(`❌ Erreur sauvegarde (tentative ${retryCount + 1}):`, error);
       
-      // Retry jusqu'à 2 fois
-      if (retryCount < 2) {
+      // Retry jusqu'à 3 fois
+      if (retryCount < 3) {
         console.log(`🔄 Nouvelle tentative dans 1 seconde...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
         return saveTasksData(newData, retryCount + 1);
@@ -137,7 +175,7 @@ export const useTaskManagerEnhanced = () => {
       });
       return false;
     }
-  }, [saveData, calculateStats, toast]);
+  }, [saveData, calculateStats, forceRefresh, toast]);
 
   // Ajout de tâche avec validation renforcée
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | null> => {
@@ -393,7 +431,7 @@ export const useTaskManagerEnhanced = () => {
     try {
       const dataToExport = {
         tool: 'productivity-tasks',
-        version: "2.3.0",
+        version: "2.4.0",
         exportDate: new Date().toISOString(),
         data: tasksData
       };
@@ -515,6 +553,7 @@ export const useTaskManagerEnhanced = () => {
     importData,
     resetData,
     exportToGoogleTasks,
-    exportToICalendar
+    exportToICalendar,
+    forceRefresh
   };
 };

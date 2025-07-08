@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +53,31 @@ export const TaskForm = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const { decomposeTaskWithAI, isLoading: isLLMLoading, hasConfiguredProvider } = useLLMManager();
   const { toast } = useToast();
+
+  // Catégories enrichies et uniques
+  const enrichedCategories = [
+    'Personnel',
+    'Travail', 
+    'Projets',
+    'Urgent',
+    'Formation',
+    'Santé & Bien-être',
+    'Finance',
+    'Maison & Famille',
+    'Créatif',
+    'Voyage',
+    'Technologie',
+    'Sport & Fitness',
+    'Administration',
+    'Achats',
+    'Événements',
+    'Maintenance',
+    'Recherche',
+    'Communication'
+  ];
+
+  // Fusionner et dédupliquer les catégories
+  const allCategories = Array.from(new Set([...enrichedCategories, ...categories]));
 
   const validateForm = (): boolean => {
     const errors: string[] = [];
@@ -269,11 +293,7 @@ export const TaskForm = ({
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Personnel">Personnel</SelectItem>
-                <SelectItem value="Travail">Travail</SelectItem>
-                <SelectItem value="Urgent">Urgent</SelectItem>
-                <SelectItem value="Projet">Projet</SelectItem>
-                {categories.filter(cat => !['Personnel', 'Travail', 'Urgent', 'Projet'].includes(cat)).map(cat => (
+                {allCategories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
               </SelectContent>

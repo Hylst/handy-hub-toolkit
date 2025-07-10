@@ -152,6 +152,15 @@ const APP_DATABASE_CONFIG = {
         { name: 'timestamp', keyPath: 'timestamp' },
         { name: 'type', keyPath: 'type' }
       ]
+    },
+    // Events Planner
+    {
+      name: 'events-planner',
+      keyPath: 'id',
+      indexes: [
+        { name: 'timestamp', keyPath: 'timestamp' },
+        { name: 'tool', keyPath: 'tool' }
+      ]
     }
   ]
 };

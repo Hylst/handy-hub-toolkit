@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar, Clock, Plus, Settings, Download, Upload, Trash2, Edit, Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useEventPlannerSupabase, Event } from '../hooks/useEventPlannerSupabase';
+import { useEventPlannerSimplified, Event } from '../hooks/useEventPlannerSimplified';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const EventPlannerTabEnhanced = () => {
@@ -31,7 +31,7 @@ export const EventPlannerTabEnhanced = () => {
     syncWithSupabase,
     exportData,
     importData
-  } = useEventPlannerSupabase();
+  } = useEventPlannerSimplified();
 
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);

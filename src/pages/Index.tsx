@@ -9,7 +9,7 @@ import { TodoListEnhanced } from "@/components/tools/TodoListEnhanced";
 import { ColorGenerator } from "@/components/tools/ColorGenerator";
 import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtilsAdvanced } from "@/components/tools/TextUtilsAdvanced";
-import { DateCalculatorAdvanced } from "@/components/tools/DateCalculatorAdvanced";
+import DateCalculatorAdvanced from "@/components/tools/DateCalculatorAdvanced";
 import { ProductivitySuiteModular } from "@/components/tools/ProductivitySuiteModular";
 import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";

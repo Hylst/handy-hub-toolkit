@@ -10,7 +10,7 @@ import { useDateCalculationsEnhanced } from "../hooks/useDateCalculationsEnhance
 
 export const DateCalculationTabEnhancedV2 = () => {
   const { toast } = useToast();
-  const { addToDate, subtractFromDate } = useDateCalculationsEnhanced();
+  const { calculateNewDate } = useDateCalculationsEnhanced();
   const [baseDate, setBaseDate] = useState("");
   const [operation, setOperation] = useState<'add' | 'subtract'>('add');
   const [amount, setAmount] = useState("");
@@ -45,13 +45,7 @@ export const DateCalculationTabEnhancedV2 = () => {
       return;
     }
 
-    let calculatedResult;
-    if (operation === 'add') {
-      calculatedResult = addToDate(baseDate, amountNum, unit);
-    } else {
-      calculatedResult = subtractFromDate(baseDate, amountNum, unit);
-    }
-    
+    const calculatedResult = calculateNewDate(baseDate, amount, unit, operation);
     setResult(calculatedResult);
   };
 

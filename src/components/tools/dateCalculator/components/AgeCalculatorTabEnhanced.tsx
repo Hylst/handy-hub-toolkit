@@ -8,21 +8,13 @@ import { Timer, CalendarDays, Target, CheckCircle, Copy, Calculator } from "luci
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { AgeResult } from "../types";
+import { useDateCalculationsEnhanced } from "../hooks/useDateCalculationsEnhanced";
 
-interface AgeCalculatorTabEnhancedProps {
-  birthDate: string;
-  setBirthDate: (date: string) => void;
-  calculateAge: () => AgeResult | string;
-}
-
-export const AgeCalculatorTabEnhanced = ({
-  birthDate,
-  setBirthDate,
-  calculateAge
-}: AgeCalculatorTabEnhancedProps) => {
+export const AgeCalculatorTabEnhanced = () => {
   const { toast } = useToast();
-  const [result, setResult] = useState<AgeResult | string>("");
+  const { calculateAge } = useDateCalculationsEnhanced();
+  const [birthDate, setBirthDate] = useState("");
+  const [result, setResult] = useState<any>("");
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -42,7 +34,7 @@ export const AgeCalculatorTabEnhanced = ({
       return;
     }
     
-    const calculatedResult = calculateAge();
+    const calculatedResult = calculateAge(birthDate);
     setResult(calculatedResult);
   };
 
@@ -128,14 +120,14 @@ export const AgeCalculatorTabEnhanced = ({
                   <p className="text-orange-600 dark:text-orange-400 text-sm lg:text-base">{result.nextBirthday}</p>
                 </div>
                 
-                {result.milestones.length > 0 && (
+                {result.milestones?.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
                       Jalons atteints
                     </h4>
                     <div className="space-y-2">
-                      {result.milestones.map((milestone, index) => (
+                      {result.milestones.map((milestone: string, index: number) => (
                         <div key={index} className="flex items-center gap-2 text-sm">
                           <span>{milestone}</span>
                         </div>

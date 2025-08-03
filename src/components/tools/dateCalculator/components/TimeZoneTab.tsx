@@ -4,14 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe } from "lucide-react";
 import { format } from "date-fns";
 import { CalculationHistory } from "./CalculationHistory";
-import { CalculationHistoryEntry } from "../types";
 
-interface TimeZoneTabProps {
-  calculationHistory: CalculationHistoryEntry[];
-}
-
-export const TimeZoneTab = ({ calculationHistory }: TimeZoneTabProps) => {
+export const TimeZoneTab = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [calculationHistory] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => {

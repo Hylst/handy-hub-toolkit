@@ -4,13 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Calculator, Clock, MapPin } from 'lucide-react';
 
-// Import components
-import DateCalculationTabEnhancedV2 from './dateCalculator/components/DateCalculationTabEnhancedV2';
-import AgeCalculatorTabEnhanced from './dateCalculator/components/AgeCalculatorTabEnhanced';
-import DateDifferenceTab from './dateCalculator/components/DateDifferenceTab';
+// Import components with named imports
+import { DateCalculationTabEnhancedV2 } from './dateCalculator/components/DateCalculationTabEnhancedV2';
+import { AgeCalculatorTabEnhanced } from './dateCalculator/components/AgeCalculatorTabEnhanced';
+import { DateDifferenceTab } from './dateCalculator/components/DateDifferenceTab';
 import EventPlannerTabEnhanced from './dateCalculator/components/EventPlannerTabEnhanced';
-import TimeZoneTab from './dateCalculator/components/TimeZoneTab';
-import CalculationHistoryTab from './dateCalculator/components/CalculationHistoryTab';
+import { TimeZoneTab } from './dateCalculator/components/TimeZoneTab';
+import { CalculationHistoryTab } from './dateCalculator/components/CalculationHistoryTab';
 
 const DateCalculatorAdvanced: React.FC = () => {
   return (

@@ -6,26 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock3, CalendarDays, Copy, Info, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DateResult } from "../types";
+import { useDateCalculationsEnhanced } from "../hooks/useDateCalculationsEnhanced";
 
-interface DateDifferenceTabProps {
-  startDate: string;
-  setStartDate: (date: string) => void;
-  endDate: string;
-  setEndDate: (date: string) => void;
-  calculateDateDifference: () => DateResult | string;
-}
-
-export const DateDifferenceTab = ({
-  startDate,
-  setStartDate,
-  endDate,
-  setEndDate,
-  calculateDateDifference
-}: DateDifferenceTabProps) => {
+export const DateDifferenceTab = () => {
   const { toast } = useToast();
+  const { calculateDateDifference } = useDateCalculationsEnhanced();
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [includeTime, setIncludeTime] = useState(true);
-  const [result, setResult] = useState<DateResult | string>("");
+  const [result, setResult] = useState<any>("");
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -45,7 +34,7 @@ export const DateDifferenceTab = ({
       return;
     }
     
-    const calculatedResult = calculateDateDifference();
+    const calculatedResult = calculateDateDifference(startDate, endDate);
     setResult(calculatedResult);
   };
 
@@ -148,16 +137,18 @@ export const DateDifferenceTab = ({
                   <div className="text-sm text-gray-600 dark:text-gray-400">Jours exacts</div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
-                    <div className="font-bold text-indigo-600">{result.breakdown.years}</div>
-                    <div className="text-gray-600 text-xs">Années</div>
+                {result.breakdown && (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+                      <div className="font-bold text-indigo-600">{result.breakdown.years}</div>
+                      <div className="text-gray-600 text-xs">Années</div>
+                    </div>
+                    <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+                      <div className="font-bold text-indigo-600">{result.breakdown.months}</div>
+                      <div className="text-gray-600 text-xs">Mois</div>
+                    </div>
                   </div>
-                  <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
-                    <div className="font-bold text-indigo-600">{result.breakdown.months}</div>
-                    <div className="text-gray-600 text-xs">Mois</div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

@@ -53,7 +53,7 @@ export const AppSettings = () => {
           .from('user_app_settings')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
           console.error('Erreur lors du chargement des paramètres:', error);
@@ -77,33 +77,66 @@ export const AppSettings = () => {
     loadSettings();
   }, [user]);
 
-  // Sauvegarder les paramètres
+  // Sauvegarder les paramètres avec la logique UPDATE/INSERT appropriée
   const saveSettings = async (newSettings: Partial<UserAppSettings>) => {
     if (!user) return;
 
     setIsSaving(true);
     try {
       const updatedSettings = { ...settings, ...newSettings };
+      const syncTime = new Date().toISOString();
       
-      const { error } = await supabase
+      // D'abord vérifier si l'enregistrement existe
+      const { data: existingData } = await supabase
         .from('user_app_settings')
-        .upsert({
-          user_id: user.id,
-          offline_mode: updatedSettings.offline_mode,
-          sync_enabled: updatedSettings.sync_enabled,
-          last_sync: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        throw error;
+      if (existingData) {
+        // L'enregistrement existe, faire un UPDATE
+        const { error } = await supabase
+          .from('user_app_settings')
+          .update({
+            offline_mode: updatedSettings.offline_mode,
+            sync_enabled: updatedSettings.sync_enabled,
+            last_sync: syncTime,
+            updated_at: syncTime
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          throw error;
+        }
+      } else {
+        // L'enregistrement n'existe pas, faire un INSERT
+        const { error } = await supabase
+          .from('user_app_settings')
+          .insert({
+            user_id: user.id,
+            offline_mode: updatedSettings.offline_mode,
+            sync_enabled: updatedSettings.sync_enabled,
+            last_sync: syncTime,
+            updated_at: syncTime
+          });
+
+        if (error) {
+          throw error;
+        }
       }
 
-      setSettings(updatedSettings);
+      // Mettre à jour l'état local seulement si la sauvegarde a réussi
+      setSettings({
+        ...updatedSettings,
+        last_sync: syncTime
+      });
       
       toast({
         title: "Paramètres sauvegardés",
         description: "Vos préférences ont été mises à jour",
       });
+      
+      console.log('✅ Paramètres utilisateur sauvegardés avec succès');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       toast({
@@ -117,11 +150,11 @@ export const AppSettings = () => {
   };
 
   const handleOfflineModeToggle = async (enabled: boolean) => {
-    await saveSettings({ offline_mode: enabled });
+    await saveSettings({ offline_mode: !enabled });
     
     toast({
-      title: enabled ? "Mode hors ligne activé" : "Mode en ligne activé",
-      description: enabled 
+      title: !enabled ? "Mode hors ligne activé" : "Mode en ligne activé",
+      description: !enabled 
         ? "Les données sont sauvegardées localement uniquement"
         : "Synchronisation avec le serveur activée",
     });

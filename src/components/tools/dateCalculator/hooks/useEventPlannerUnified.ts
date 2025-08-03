@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -117,22 +116,52 @@ export const useEventPlannerUnified = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      const syncTime = new Date().toISOString();
+      
+      // D'abord vérifier si l'enregistrement existe
+      const { data: existingData } = await supabase
         .from('user_app_settings')
-        .upsert({
-          user_id: user.id,
-          offline_mode: settings.offlineMode,
-          sync_enabled: settings.syncEnabled,
-          last_sync: settings.lastSync || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error saving user settings:', error);
-        return;
+      if (existingData) {
+        // L'enregistrement existe, faire un UPDATE
+        const { error } = await supabase
+          .from('user_app_settings')
+          .update({
+            offline_mode: settings.offlineMode,
+            sync_enabled: settings.syncEnabled,
+            last_sync: settings.lastSync || syncTime,
+            updated_at: syncTime
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating user settings:', error);
+          return;
+        }
+      } else {
+        // L'enregistrement n'existe pas, faire un INSERT
+        const { error } = await supabase
+          .from('user_app_settings')
+          .insert({
+            user_id: user.id,
+            offline_mode: settings.offlineMode,
+            sync_enabled: settings.syncEnabled,
+            last_sync: settings.lastSync || syncTime,
+            updated_at: syncTime
+          });
+
+        if (error) {
+          console.error('Error inserting user settings:', error);
+          return;
+        }
       }
 
+      // Mettre à jour l'état local seulement si la sauvegarde a réussi
       setUserSettings(settings);
+      console.log('✅ Paramètres utilisateur sauvegardés avec succès');
     } catch (error) {
       console.error('Error saving user settings:', error);
     }
@@ -487,6 +516,7 @@ export const useEventPlannerUnified = () => {
       offlineMode: !userSettings.offlineMode
     };
 
+    // Sauvegarder les nouveaux paramètres
     await saveUserSettings(newSettings);
 
     if (!newSettings.offlineMode && user) {

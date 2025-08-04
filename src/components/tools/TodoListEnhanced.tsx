@@ -29,14 +29,25 @@ interface Category {
   id: string;
   name: string;
   color: string;
+  icon?: string;
 }
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'personal', name: 'Personnel', color: 'bg-blue-100 text-blue-800' },
-  { id: 'work', name: 'Travail', color: 'bg-green-100 text-green-800' },
-  { id: 'shopping', name: 'Courses', color: 'bg-purple-100 text-purple-800' },
-  { id: 'health', name: 'Santé', color: 'bg-red-100 text-red-800' },
-  { id: 'learning', name: 'Apprentissage', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'personal', name: 'Personnel', color: 'bg-blue-100 text-blue-800', icon: '👤' },
+  { id: 'work', name: 'Travail', color: 'bg-green-100 text-green-800', icon: '💼' },
+  { id: 'shopping', name: 'Courses', color: 'bg-purple-100 text-purple-800', icon: '🛒' },
+  { id: 'health', name: 'Santé', color: 'bg-red-100 text-red-800', icon: '❤️' },
+  { id: 'learning', name: 'Apprentissage', color: 'bg-yellow-100 text-yellow-800', icon: '📚' },
+  { id: 'finance', name: 'Finance', color: 'bg-emerald-100 text-emerald-800', icon: '💰' },
+  { id: 'family', name: 'Famille', color: 'bg-pink-100 text-pink-800', icon: '👨‍👩‍👧‍👦' },
+  { id: 'travel', name: 'Voyage', color: 'bg-cyan-100 text-cyan-800', icon: '✈️' },
+  { id: 'fitness', name: 'Sport', color: 'bg-orange-100 text-orange-800', icon: '💪' },
+  { id: 'hobby', name: 'Loisirs', color: 'bg-indigo-100 text-indigo-800', icon: '🎨' },
+  { id: 'home', name: 'Maison', color: 'bg-amber-100 text-amber-800', icon: '🏠' },
+  { id: 'social', name: 'Social', color: 'bg-teal-100 text-teal-800', icon: '👥' },
+  { id: 'tech', name: 'Technologie', color: 'bg-slate-100 text-slate-800', icon: '💻' },
+  { id: 'creative', name: 'Créatif', color: 'bg-violet-100 text-violet-800', icon: '🎭' },
+  { id: 'urgent', name: 'Urgent', color: 'bg-red-200 text-red-900', icon: '🚨' },
 ];
 
 export const TodoListEnhanced = () => {
@@ -303,7 +314,10 @@ export const TodoListEnhanced = () => {
                     <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.name}
+                          <span className="flex items-center gap-2">
+                            <span>{category.icon}</span>
+                            {category.name}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -357,7 +371,10 @@ export const TodoListEnhanced = () => {
                     <SelectItem value="all">Toutes catégories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                        <span className="flex items-center gap-2">
+                          <span>{category.icon}</span>
+                          {category.name}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -450,7 +467,10 @@ export const TodoListEnhanced = () => {
                                   </Badge>
                                   
                                   <Badge className={categoryInfo.color}>
-                                    {categoryInfo.name}
+                                    <span className="flex items-center gap-1">
+                                      <span>{categoryInfo.icon}</span>
+                                      {categoryInfo.name}
+                                    </span>
                                   </Badge>
                                   
                                   {isOverdue && (

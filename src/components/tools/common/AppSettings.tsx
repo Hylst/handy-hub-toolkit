@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Cloud, CloudOff, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Settings, Cloud, CloudOff, Wifi, WifiOff, Loader2, RefreshCw, Database } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUnifiedDexieManager } from '@/hooks/useUnifiedDexieManager';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -19,6 +21,7 @@ interface UserAppSettings {
 export const AppSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { exportAllData } = useUnifiedDexieManager();
   
   const [settings, setSettings] = useState<UserAppSettings>({
     offline_mode: false,
@@ -26,6 +29,7 @@ export const AppSettings = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Détecter le statut en ligne/hors ligne
@@ -164,6 +168,58 @@ export const AppSettings = () => {
     await saveSettings({ sync_enabled: enabled });
   };
 
+  // Synchronisation manuelle des données
+  const handleManualSync = async () => {
+    if (!user || settings.offline_mode || !isOnline) return;
+
+    setIsSyncing(true);
+    try {
+      // Exporter toutes les données locales
+      const localData = await exportAllData();
+      
+      if (Object.keys(localData).length === 0) {
+        toast({
+          title: "Aucune donnée à synchroniser",
+          description: "Aucune donnée locale trouvée",
+        });
+        return;
+      }
+
+      // Sauvegarder les données dans Supabase
+      const { error } = await supabase
+        .from('user_offline_data')
+        .upsert({
+          user_id: user.id,
+          tool_name: 'unified_backup',
+          data: localData,
+          last_sync: new Date().toISOString(),
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Mettre à jour les paramètres avec la nouvelle heure de sync
+      await saveSettings({ last_sync: new Date().toISOString() });
+
+      toast({
+        title: "Synchronisation réussie",
+        description: "Toutes vos données ont été sauvegardées sur le serveur",
+      });
+
+      console.log('✅ Synchronisation manuelle réussie');
+    } catch (error) {
+      console.error('Erreur lors de la synchronisation manuelle:', error);
+      toast({
+        title: "Erreur de synchronisation",
+        description: "Impossible de synchroniser les données",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -180,8 +236,8 @@ export const AppSettings = () => {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-lg">
           <div className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Préférences de l'Application
+            <Database className="w-5 h-5" />
+            Sauvegarde données
           </div>
           <div className="flex items-center gap-2">
             {isSaving && (
@@ -248,6 +304,33 @@ export const AppSettings = () => {
             />
           </div>
         </div>
+
+        {/* Bouton de synchronisation manuelle */}
+        {!settings.offline_mode && !settings.sync_enabled && isOnline && (
+          <div className="pt-4 border-t">
+            <Button
+              onClick={handleManualSync}
+              disabled={isSyncing || isSaving}
+              variant="outline"
+              className="w-full"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Synchronisation en cours...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Synchroniser maintenant
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Synchronisation manuelle des données locales vers le serveur
+            </p>
+          </div>
+        )}
 
         {/* Dernière synchronisation */}
         {settings.last_sync && !settings.offline_mode && (

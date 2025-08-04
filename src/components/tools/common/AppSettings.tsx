@@ -157,10 +157,10 @@ export const AppSettings = () => {
     await saveSettings({ offline_mode: !enabled });
     
     toast({
-      title: !enabled ? "Mode hors ligne activé" : "Mode en ligne activé",
-      description: !enabled 
-        ? "Les données sont sauvegardées localement uniquement"
-        : "Synchronisation avec le serveur activée",
+      title: enabled ? "Mode en ligne activé" : "Mode hors ligne activé",
+      description: enabled 
+        ? "Synchronisation avec le serveur activée"
+        : "Les données sont sauvegardées localement uniquement",
     });
   };
 
@@ -284,7 +284,7 @@ export const AppSettings = () => {
             </div>
             <Switch
               checked={!settings.offline_mode}
-              onCheckedChange={(checked) => handleOfflineModeToggle(!checked)}
+              onCheckedChange={handleOfflineModeToggle}
               disabled={isSaving}
             />
           </div>
@@ -306,7 +306,7 @@ export const AppSettings = () => {
         </div>
 
         {/* Bouton de synchronisation manuelle */}
-        {!settings.offline_mode && !settings.sync_enabled && isOnline && (
+        {!settings.offline_mode && isOnline && (
           <div className="pt-4 border-t">
             <Button
               onClick={handleManualSync}

@@ -219,7 +219,7 @@ export const usePasswordGeneratorAdvanced = () => {
 
   // Chargement des préférences
   useEffect(() => {
-    if (passwordData && Object.keys(passwordData).length > 0) {
+    if (passwordData && Object.keys(passwordData).length > 0 && passwordData.history && passwordData.history.length > 0) {
       const lastEntry = passwordData.history[0];
       if (lastEntry) {
         setSettings(lastEntry.settings);

@@ -11,7 +11,7 @@ import { BMICalculator } from "@/components/tools/BMICalculator";
 import { TextUtilsAdvanced } from "@/components/tools/TextUtilsAdvanced";
 import DateCalculatorAdvanced from "@/components/tools/DateCalculatorAdvanced";
 import { ProductivitySuiteModular } from "@/components/tools/ProductivitySuiteModular";
-import { PasswordGeneratorAdvanced } from "@/components/tools/PasswordGeneratorAdvanced";
+import { PasswordGeneratorAdvancedEnhanced } from "@/components/tools/PasswordGeneratorAdvancedEnhanced";
 import { QRCodeGenerator } from "@/components/tools/QRCodeGenerator";
 import { HealthWellnessSuite } from "@/components/tools/HealthWellnessSuite";
 import { About } from "@/components/About";
@@ -80,7 +80,7 @@ const Index = () => {
       case "productivity-suite":
         return <ProductivitySuiteModular />;
       case "password-generator-advanced":
-        return <PasswordGeneratorAdvanced />;
+        return <PasswordGeneratorAdvancedEnhanced />;
       case "color-generator":
         return <ColorGenerator />;
       case "bmi-calculator":

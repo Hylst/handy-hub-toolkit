@@ -8,8 +8,8 @@ import { RefreshCw, Save, Settings, Key, History, Star, Shield, Zap } from "luci
 import { toast } from "@/hooks/use-toast";
 import { usePasswordGeneratorAdvanced } from "./passwordGenerator/hooks/usePasswordGeneratorAdvanced";
 import { PasswordDisplayAdvanced } from "./passwordGenerator/PasswordDisplayAdvanced";
-import { PasswordSettingsAdvanced } from "./passwordGenerator/PasswordSettingsAdvanced";
-import { PasswordHistoryAdvanced } from "./passwordGenerator/PasswordHistoryAdvanced";
+import { PasswordSettingsLegacy } from "./passwordGenerator/PasswordSettingsLegacy";
+import { PasswordHistoryLegacy } from "./passwordGenerator/PasswordHistoryLegacy";
 import { PasswordTemplatesAdvanced } from "./passwordGenerator/PasswordTemplatesAdvanced";
 import { PasswordAnalyzer } from "./passwordGenerator/PasswordAnalyzer";
 import { DataImportExport } from "./common/DataImportExport";
@@ -151,7 +151,7 @@ export const PasswordGeneratorUltimate = () => {
         </TabsList>
 
         <TabsContent value="generator" className="space-y-6">
-          <PasswordSettingsAdvanced
+          <PasswordSettingsLegacy
             settings={settings}
             onSettingsChange={setSettings}
             templates={templates}
@@ -215,7 +215,7 @@ export const PasswordGeneratorUltimate = () => {
         </TabsContent>
 
         <TabsContent value="history">
-          <PasswordHistoryAdvanced
+          <PasswordHistoryLegacy
             history={history}
             templates={templates}
             onCopy={handleCopyPassword}

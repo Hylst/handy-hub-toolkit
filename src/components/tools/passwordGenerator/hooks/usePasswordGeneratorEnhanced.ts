@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useUniversalDataManager } from '@/hooks/useUniversalDataManager';
+import { useDexieDB } from '@/hooks/useDexieDB';
 import { passwordTemplates } from '../data/templateCategories';
 
 // Enhanced interfaces
@@ -190,6 +191,33 @@ export const usePasswordGeneratorEnhanced = () => {
     resetUniversalData,
     getUniversalStats
   } = useUniversalDataManager();
+
+  const { saveData, loadData } = useDexieDB();
+  const [passwordData, setPasswordData] = useState<PasswordData>(defaultPasswordData);
+  const [loading, setLoading] = useState(true);
+
+  // Load data on mount
+  useEffect(() => {
+    const loadPasswordData = async () => {
+      try {
+        const data = await loadData('passwordGenerator');
+        if (data) {
+          setPasswordData({ ...defaultPasswordData, ...data });
+        }
+      } catch (error) {
+        console.error('Error loading password data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPasswordData();
+  }, [loadData]);
+
+  // Save data function
+  const updateData = useCallback(async (newData: PasswordData) => {
+    setPasswordData(newData);
+    await saveData('passwordGenerator', newData);
+  }, [saveData]);
 
   // Load template favorites and settings from last entry
   useEffect(() => {
@@ -835,9 +863,8 @@ export const usePasswordGeneratorEnhanced = () => {
     markAsCopied,
 
     // Data management
-    exportData,
-    importData,
-    clearData,
-    updateData
+    exportUniversalData,
+    importUniversalData,
+    resetUniversalData
   };
 };

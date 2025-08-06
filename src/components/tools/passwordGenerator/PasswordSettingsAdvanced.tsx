@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Settings, Wand2, Zap } from "lucide-react";
-import { PasswordSettings, PasswordTemplate } from "./hooks/usePasswordGeneratorAdvanced";
+import { PasswordSettings, PasswordTemplate } from "./hooks/usePasswordGeneratorEnhanced";
 
 interface PasswordSettingsAdvancedProps {
   settings: PasswordSettings;
@@ -46,7 +46,7 @@ export const PasswordSettingsAdvanced = ({
             {quickTemplates.map((template) => (
               <Button
                 key={template.id}
-                variant={settings.template === template.id ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => onApplyTemplate(template.id)}
                 className="text-xs"
@@ -99,8 +99,8 @@ export const PasswordSettingsAdvanced = ({
                 <Label htmlFor="uppercase" className="text-sm">Majuscules (A-Z)</Label>
                 <Switch
                   id="uppercase"
-                  checked={settings.includeUppercase}
-                  onCheckedChange={(checked) => updateSetting('includeUppercase', checked)}
+                  checked={settings.upper}
+                  onCheckedChange={(checked) => updateSetting('upper', checked)}
                 />
               </div>
 
@@ -108,8 +108,8 @@ export const PasswordSettingsAdvanced = ({
                 <Label htmlFor="lowercase" className="text-sm">Minuscules (a-z)</Label>
                 <Switch
                   id="lowercase"
-                  checked={settings.includeLowercase}
-                  onCheckedChange={(checked) => updateSetting('includeLowercase', checked)}
+                  checked={settings.lower}
+                  onCheckedChange={(checked) => updateSetting('lower', checked)}
                 />
               </div>
 
@@ -117,8 +117,8 @@ export const PasswordSettingsAdvanced = ({
                 <Label htmlFor="numbers" className="text-sm">Chiffres (0-9)</Label>
                 <Switch
                   id="numbers"
-                  checked={settings.includeNumbers}
-                  onCheckedChange={(checked) => updateSetting('includeNumbers', checked)}
+                  checked={settings.numbers}
+                  onCheckedChange={(checked) => updateSetting('numbers', checked)}
                 />
               </div>
 
@@ -126,8 +126,8 @@ export const PasswordSettingsAdvanced = ({
                 <Label htmlFor="symbols" className="text-sm">Symboles (!@#$...)</Label>
                 <Switch
                   id="symbols"
-                  checked={settings.includeSymbols}
-                  onCheckedChange={(checked) => updateSetting('includeSymbols', checked)}
+                  checked={settings.symbols}
+                  onCheckedChange={(checked) => updateSetting('symbols', checked)}
                 />
               </div>
             </div>
@@ -169,30 +169,13 @@ export const PasswordSettingsAdvanced = ({
                 </div>
                 <Switch
                   id="requireEvery"
-                  checked={settings.requireEveryCharType}
-                  onCheckedChange={(checked) => updateSetting('requireEveryCharType', checked)}
+                  checked={settings.requireEvery}
+                  onCheckedChange={(checked) => updateSetting('requireEvery', checked)}
                 />
               </div>
             </div>
           </div>
 
-          {/* Template selector */}
-          <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Label htmlFor="template">Template actuel</Label>
-            <Select value={settings.template} onValueChange={(value) => updateSetting('template', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un template" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="custom">Personnalisé</SelectItem>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name} - {template.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </CardContent>
       </Card>
     </div>

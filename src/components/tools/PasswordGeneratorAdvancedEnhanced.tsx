@@ -102,10 +102,7 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
           <PasswordDisplayAdvanced
             password={currentPassword}
             strength={currentStrength || { 
-              score: 0, level: '', color: '', feedback: [], entropy: 0, 
-              crackTime: '', hasUppercase: false, hasLowercase: false, 
-              hasNumbers: false, hasSymbols: false, hasSequence: false, 
-              hasRepeatedChars: false, commonPatterns: []
+              score: 0, level: '', color: '', feedback: [], entropy: 0
             }}
             onCopy={handleCopyPassword}
             stats={stats}
@@ -158,7 +155,7 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
         <TabsContent value="generator" className="space-y-4">
           <PasswordSettingsAdvanced
             settings={settings}
-            onSettingsChange={setSettings}
+            onSettingsChange={(newSettings) => setSettings(newSettings)}
             templates={templates}
             onApplyTemplate={applyTemplate}
           />
@@ -183,9 +180,9 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
         <TabsContent value="history" className="space-y-4">
           <PasswordHistoryAdvanced
             history={history}
+            templates={templates}
             onCopy={handleCopyPassword}
             onToggleFavorite={toggleFavorite}
-            onRegenerate={(settings) => generatePassword(settings)}
           />
         </TabsContent>
 
@@ -193,11 +190,10 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
           <DataImportExport
             onExport={() => exportUniversalData()}
             onImport={(file) => importUniversalData(file)}
-            data={{
-              history: history.length,
-              templates: templates.length,
-              stats: stats.totalGenerated
-            }}
+            onReset={() => {}}
+            isOnline={true}
+            isSyncing={false}
+            toolName="Générateur de Mots de Passe"
           />
         </TabsContent>
       </Tabs>

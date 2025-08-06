@@ -17,14 +17,33 @@ interface PasswordHistoryEntry {
     score: number;
     level: string;
     color: string;
+    feedback: string[];
+    entropy: number;
+    crackTime: string;
+    hasUppercase: boolean;
+    hasLowercase: boolean;
+    hasNumbers: boolean;
+    hasSymbols: boolean;
+    hasSequence: boolean;
+    hasRepeatedChars: boolean;
+    commonPatterns: string[];
+    details: {
+      length: number;
+      uniqueChars: number;
+      characterVariety: number;
+      commonWords: string[];
+      keyboardPatterns: string[];
+      datePatterns: string[];
+    };
   };
-  settings: {
-    length: number;
-    template: string;
-  };
+  settings: any;
   isFavorite: boolean;
-  copyCount: number;
-  lastCopied?: number;
+  isCopied: boolean;
+  templateId?: string;
+  category?: string;
+  notes?: string;
+  usageCount?: number;
+  lastUsed?: number;
 }
 
 interface Template {
@@ -37,7 +56,7 @@ interface Template {
 interface PasswordHistoryAdvancedProps {
   history: PasswordHistoryEntry[];
   templates: Template[];
-  onCopy: (password: string, entryId: string) => void;
+  onCopy: (password: string, entryId?: string) => void;
   onToggleFavorite: (entryId: string) => void;
 }
 
@@ -50,7 +69,8 @@ export const PasswordHistoryAdvanced = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'favorites' | 'strong'>('all');
 
-  const getTemplateName = (templateId: string) => {
+  const getTemplateName = (templateId?: string) => {
+    if (!templateId) return 'Personnalisé';
     const template = templates.find(t => t.id === templateId);
     return template ? template.name : 'Personnalisé';
   };
@@ -58,7 +78,7 @@ export const PasswordHistoryAdvanced = ({
   const filteredHistory = history.filter(entry => {
     const matchesSearch = searchTerm === '' || 
       entry.password.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getTemplateName(entry.settings.template).toLowerCase().includes(searchTerm.toLowerCase());
+      getTemplateName(entry.templateId).toLowerCase().includes(searchTerm.toLowerCase());
     
     if (!matchesSearch) return false;
 
@@ -174,9 +194,9 @@ export const PasswordHistoryAdvanced = ({
                         {format(new Date(entry.timestamp), 'dd MMM yyyy à HH:mm', { locale: fr })}
                       </span>
                       <span>• {entry.settings.length} caractères</span>
-                      <span>• {getTemplateName(entry.settings.template)}</span>
-                      {entry.copyCount > 0 && (
-                        <span>• Copié {entry.copyCount} fois</span>
+                      <span>• {getTemplateName(entry.templateId)}</span>
+                      {entry.usageCount && entry.usageCount > 0 && (
+                        <span>• Copié {entry.usageCount} fois</span>
                       )}
                     </div>
                   </div>

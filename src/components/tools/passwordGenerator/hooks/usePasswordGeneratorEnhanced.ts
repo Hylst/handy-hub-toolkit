@@ -129,6 +129,9 @@ const keyboardPatterns = [
 
 const datePatterns = /\b(19|20)\d{2}\b|\b(0[1-9]|1[0-2])[\/\-\.](0[1-9]|[12]\d|3[01])[\/\-\.](19|20)?\d{2}\b/g;
 
+// Tool identifier for data storage
+const TOOL_NAME = 'passwordGenerator';
+
 // Default data structure
 const defaultPasswordData: PasswordData = {
   history: [],
@@ -195,6 +198,31 @@ export const usePasswordGeneratorEnhanced = () => {
   const { saveData, loadData } = useDexieDB();
   const [passwordData, setPasswordData] = useState<PasswordData>(defaultPasswordData);
   const [loading, setLoading] = useState(true);
+
+  // Save settings whenever they change
+  const saveSettings = useCallback(async (newSettings: PasswordSettings) => {
+    try {
+      await saveData(`${TOOL_NAME}_settings`, newSettings);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  }, [saveData]);
+
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const savedSettings = await loadData(`${TOOL_NAME}_settings`);
+        if (savedSettings) {
+          setSettings(savedSettings);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, [loadData]);
 
   // Load data on mount
   useEffect(() => {
@@ -755,7 +783,7 @@ export const usePasswordGeneratorEnhanced = () => {
     
     if (template) {
       setSettings(template.settings);
-      // Update template usage stats
+      // Also update the stored data with the new settings
       if (passwordData) {
         const updatedStats = {
           ...passwordData.stats,
@@ -851,7 +879,10 @@ export const usePasswordGeneratorEnhanced = () => {
     generatePassword,
     generateBatch,
     analyzeStrength,
-    setSettings,
+    setSettings: (newSettings: PasswordSettings) => {
+      setSettings(newSettings);
+      saveSettings(newSettings);
+    },
     setBatchSettings,
 
     // Template management

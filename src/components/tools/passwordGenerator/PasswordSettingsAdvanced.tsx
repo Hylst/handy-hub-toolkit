@@ -26,7 +26,8 @@ export const PasswordSettingsAdvanced = ({
     key: K,
     value: PasswordSettings[K]
   ) => {
-    onSettingsChange({ ...settings, [key]: value });
+    const newSettings = { ...settings, [key]: value };
+    onSettingsChange(newSettings);
   };
 
   const quickTemplates = templates.filter(t => t.category === 'quick');

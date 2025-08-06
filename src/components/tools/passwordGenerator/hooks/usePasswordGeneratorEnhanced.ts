@@ -777,13 +777,19 @@ export const usePasswordGeneratorEnhanced = () => {
   }, []);
 
   // Template management
-  const applyTemplate = useCallback((templateId: string) => {
+  const applyTemplate = useCallback(async (templateId: string) => {
     const template = passwordData?.templates?.find(t => t.id === templateId) ||
                     passwordTemplates.find(t => t.id === templateId);
     
     if (template) {
-      setSettings(template.settings);
-      // Also update the stored data with the new settings
+      // Force update local settings state immediately
+      const newSettings = { ...template.settings };
+      setSettings(newSettings);
+      
+      // Save to storage
+      await saveSettings(newSettings);
+      
+      // Update template usage stats
       if (passwordData) {
         const updatedStats = {
           ...passwordData.stats,
@@ -793,13 +799,16 @@ export const usePasswordGeneratorEnhanced = () => {
           }
         };
         
-        updateData({
+        await updateData({
           ...passwordData,
           stats: updatedStats
         });
       }
+      
+      // Force re-render trigger
+      generatePassword();
     }
-  }, [passwordData, updateData]);
+  }, [passwordData, updateData, saveSettings, generatePassword]);
 
   const toggleTemplateFavorite = useCallback(async (templateId: string) => {
     if (!passwordData) return;
@@ -879,10 +888,10 @@ export const usePasswordGeneratorEnhanced = () => {
     generatePassword,
     generateBatch,
     analyzeStrength,
-    setSettings: (newSettings: PasswordSettings) => {
+    setSettings: useCallback((newSettings: PasswordSettings) => {
       setSettings(newSettings);
       saveSettings(newSettings);
-    },
+    }, [saveSettings]),
     setBatchSettings,
 
     // Template management

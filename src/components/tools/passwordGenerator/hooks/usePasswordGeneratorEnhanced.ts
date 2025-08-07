@@ -888,7 +888,7 @@ export const usePasswordGeneratorEnhanced = () => {
     generatePassword,
     generateBatch,
     analyzeStrength,
-    setSettings: useCallback(async (newSettings: PasswordSettings) => {
+    updateSettings: useCallback(async (newSettings: PasswordSettings) => {
       setSettings(newSettings);
       await saveSettings(newSettings);
     }, [saveSettings]),

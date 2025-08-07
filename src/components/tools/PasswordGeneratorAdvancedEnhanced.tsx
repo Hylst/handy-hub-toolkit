@@ -30,7 +30,7 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
     templateFavorites,
     generatePassword,
     analyzeStrength,
-    setSettings,
+    updateSettings,
     applyTemplate,
     toggleTemplateFavorite,
     toggleFavorite,
@@ -155,7 +155,7 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
         <TabsContent value="generator" className="space-y-4">
           <PasswordSettingsAdvanced
             settings={settings}
-            onSettingsChange={setSettings}
+            onSettingsChange={updateSettings}
             templates={templates}
             onApplyTemplate={applyTemplate}
           />

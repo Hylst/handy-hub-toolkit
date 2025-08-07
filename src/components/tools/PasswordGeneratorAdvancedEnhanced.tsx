@@ -154,7 +154,6 @@ export const PasswordGeneratorAdvancedEnhanced = () => {
 
         <TabsContent value="generator" className="space-y-4">
           <PasswordSettingsAdvanced
-            key={JSON.stringify(settings)} // Force re-render when settings change
             settings={settings}
             onSettingsChange={setSettings}
             templates={templates}

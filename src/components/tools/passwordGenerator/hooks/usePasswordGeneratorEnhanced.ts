@@ -247,30 +247,14 @@ export const usePasswordGeneratorEnhanced = () => {
     await saveData('passwordGenerator', newData);
   }, [saveData]);
 
-  // Load template favorites and settings from last entry
+  // Load template favorites from password data
   useEffect(() => {
     if (passwordData && Object.keys(passwordData).length > 0) {
       if (passwordData.favorites) {
         setTemplateFavorites(passwordData.favorites);
       }
-      
-      if (passwordData.history && passwordData.history.length > 0) {
-        const lastEntry = passwordData.history[0];
-        if (lastEntry && lastEntry.settings) {
-          setSettings(lastEntry.settings);
-        }
-      }
-
-      if (passwordData.settings?.defaultTemplate) {
-        const defaultTemplate = passwordData.templates?.find(
-          t => t.id === passwordData.settings.defaultTemplate
-        );
-        if (defaultTemplate) {
-          setSettings(defaultTemplate.settings);
-        }
-      }
     }
-  }, [passwordData]);
+  }, [passwordData.favorites]);
 
   // Enhanced strength analysis
   const analyzeStrength = useCallback((password: string): PasswordStrength => {

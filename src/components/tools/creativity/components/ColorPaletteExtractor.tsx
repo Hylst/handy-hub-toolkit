@@ -102,6 +102,103 @@ export const ColorPaletteExtractor = () => {
     };
   };
 
+  const rgbToHsl = (r: number, g: number, b: number): { h: number; s: number; l: number } => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    
+    return { h: h * 360, s, l };
+  };
+
+  const colorDistance = (rgb1: { r: number; g: number; b: number }, rgb2: { r: number; g: number; b: number }): number => {
+    // Use perceptual color distance (weighted RGB)
+    const dr = rgb1.r - rgb2.r;
+    const dg = rgb1.g - rgb2.g;
+    const db = rgb1.b - rgb2.b;
+    return Math.sqrt(0.3 * dr * dr + 0.59 * dg * dg + 0.11 * db * db);
+  };
+
+  const kMeansCluster = (colors: { rgb: { r: number; g: number; b: number }; count: number }[], k: number): ExtractedColor[] => {
+    if (colors.length <= k) return colors.map(c => ({ hex: rgbToHex(c.rgb.r, c.rgb.g, c.rgb.b), rgb: c.rgb, count: c.count, percentage: 0 }));
+
+    // Initialize centroids randomly
+    let centroids = colors.slice(0, k).map(c => ({ ...c.rgb }));
+    
+    for (let iter = 0; iter < 20; iter++) {
+      const clusters: { rgb: { r: number; g: number; b: number }; count: number }[][] = Array(k).fill(null).map(() => []);
+      
+      // Assign colors to nearest centroid
+      colors.forEach(color => {
+        let minDist = Infinity;
+        let clusterIndex = 0;
+        
+        centroids.forEach((centroid, i) => {
+          const dist = colorDistance(color.rgb, centroid);
+          if (dist < minDist) {
+            minDist = dist;
+            clusterIndex = i;
+          }
+        });
+        
+        clusters[clusterIndex].push(color);
+      });
+      
+      // Update centroids
+      const newCentroids = clusters.map(cluster => {
+        if (cluster.length === 0) return centroids[0];
+        
+        const totalWeight = cluster.reduce((sum, c) => sum + c.count, 0);
+        const r = cluster.reduce((sum, c) => sum + c.rgb.r * c.count, 0) / totalWeight;
+        const g = cluster.reduce((sum, c) => sum + c.rgb.g * c.count, 0) / totalWeight;
+        const b = cluster.reduce((sum, c) => sum + c.rgb.b * c.count, 0) / totalWeight;
+        
+        return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+      });
+      
+      centroids = newCentroids;
+    }
+    
+    // Convert centroids to final colors with counts
+    return centroids.map((centroid, i) => {
+      const clusterColors = colors.filter(color => {
+        let minDist = Infinity;
+        let nearestCentroid = 0;
+        centroids.forEach((c, idx) => {
+          const dist = colorDistance(color.rgb, c);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestCentroid = idx;
+          }
+        });
+        return nearestCentroid === i;
+      });
+      
+      const totalCount = clusterColors.reduce((sum, c) => sum + c.count, 0);
+      return {
+        hex: rgbToHex(centroid.r, centroid.g, centroid.b),
+        rgb: centroid,
+        count: totalCount,
+        percentage: 0
+      };
+    }).filter(c => c.count > 0);
+  };
+
   const extractColorsFromImage = (imageData: string, preset: ExtractionPreset, maxColors: number): Promise<ExtractedColor[]> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -125,10 +222,10 @@ export const ColorPaletteExtractor = () => {
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        const colorMap = new Map<string, number>();
+        const colorMap = new Map<string, { rgb: { r: number; g: number; b: number }; count: number }>();
 
         // Sample pixels (skip some for performance on large images)
-        const step = Math.max(1, Math.floor(data.length / (4 * 10000))); // Sample ~10k pixels max
+        const step = Math.max(1, Math.floor(data.length / (4 * 15000))); // Sample ~15k pixels max
         
         for (let i = 0; i < data.length; i += 4 * step) {
           const r = data[i];
@@ -141,29 +238,74 @@ export const ColorPaletteExtractor = () => {
 
           // Apply bit reduction
           const reducedRgb = applyBitReduction({ r, g, b });
-          const hex = rgbToHex(reducedRgb.r, reducedRgb.g, reducedRgb.b);
+          
+          // Filter by saturation if needed
+          const hsl = rgbToHsl(reducedRgb.r, reducedRgb.g, reducedRgb.b);
+          if (hsl.s < preset.minSaturation && hsl.l > 0.1 && hsl.l < 0.9) continue;
 
-          colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
+          const hex = rgbToHex(reducedRgb.r, reducedRgb.g, reducedRgb.b);
+          const existing = colorMap.get(hex);
+          
+          if (existing) {
+            existing.count++;
+          } else {
+            colorMap.set(hex, { rgb: reducedRgb, count: 1 });
+          }
         }
 
-        // Convert to array and sort by frequency
-        const colorArray = Array.from(colorMap.entries())
-          .map(([hex, count]) => ({
-            hex,
-            rgb: hexToRgb(hex),
-            count,
-            percentage: 0
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, maxColors);
+        // Convert to array
+        const colorArray = Array.from(colorMap.values());
+        
+        // Apply clustering based on preset
+        let finalColors: ExtractedColor[];
+        
+        if (preset.clustering === 'kmeans' && colorArray.length > maxColors) {
+          finalColors = kMeansCluster(colorArray, maxColors);
+        } else if (preset.clustering === 'advanced') {
+          // Remove very similar colors
+          const filteredColors: typeof colorArray = [];
+          const minDistance = preset.tolerance;
+          
+          colorArray.sort((a, b) => b.count - a.count);
+          
+          for (const color of colorArray) {
+            const isSimilar = filteredColors.some(existing => 
+              colorDistance(color.rgb, existing.rgb) < minDistance
+            );
+            
+            if (!isSimilar) {
+              filteredColors.push(color);
+            }
+          }
+          
+          finalColors = filteredColors
+            .slice(0, maxColors)
+            .map(c => ({
+              hex: rgbToHex(c.rgb.r, c.rgb.g, c.rgb.b),
+              rgb: c.rgb,
+              count: c.count,
+              percentage: 0
+            }));
+        } else {
+          // Basic clustering - just sort by frequency
+          finalColors = colorArray
+            .sort((a, b) => b.count - a.count)
+            .slice(0, maxColors)
+            .map(c => ({
+              hex: rgbToHex(c.rgb.r, c.rgb.g, c.rgb.b),
+              rgb: c.rgb,
+              count: c.count,
+              percentage: 0
+            }));
+        }
 
         // Calculate percentages
-        const totalCount = colorArray.reduce((sum, color) => sum + color.count, 0);
-        colorArray.forEach(color => {
+        const totalCount = finalColors.reduce((sum, color) => sum + color.count, 0);
+        finalColors.forEach(color => {
           color.percentage = Math.round((color.count / totalCount) * 100 * 10) / 10;
         });
 
-        resolve(colorArray);
+        resolve(finalColors);
       };
       img.src = imageData;
     });
@@ -213,13 +355,72 @@ export const ColorPaletteExtractor = () => {
     });
   };
 
-  const exportPalette = (format: 'txt' | 'lst') => {
+  const generatePixelArtRamp = (): HTMLCanvasElement => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    
+    // Sort colors by HSL for better ramp organization
+    const sortedColors = [...extractedColors].sort((a, b) => {
+      const hslA = rgbToHsl(a.rgb.r, a.rgb.g, a.rgb.b);
+      const hslB = rgbToHsl(b.rgb.r, b.rgb.g, b.rgb.b);
+      
+      // Sort by hue first, then lightness
+      if (Math.abs(hslA.h - hslB.h) > 10) {
+        return hslA.h - hslB.h;
+      }
+      return hslA.l - hslB.l;
+    });
+    
+    // Calculate grid dimensions
+    const colorsPerRow = Math.ceil(Math.sqrt(sortedColors.length));
+    const rows = Math.ceil(sortedColors.length / colorsPerRow);
+    
+    // Each color square is 4x4 pixels
+    const squareSize = 4;
+    canvas.width = colorsPerRow * squareSize;
+    canvas.height = rows * squareSize;
+    
+    // Draw color squares
+    sortedColors.forEach((color, index) => {
+      const row = Math.floor(index / colorsPerRow);
+      const col = index % colorsPerRow;
+      
+      ctx.fillStyle = color.hex;
+      ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+    });
+    
+    return canvas;
+  };
+
+  const exportPalette = (format: 'txt' | 'lst' | 'pixelart') => {
     if (extractedColors.length === 0) {
       toast({
         title: "Aucune couleur à exporter",
         description: "Veuillez d'abord extraire des couleurs.",
         variant: "destructive"
       });
+      return;
+    }
+
+    if (format === 'pixelart') {
+      const canvas = generatePixelArtRamp();
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'palette-pixelart.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          toast({
+            title: "Rampe pixel art exportée !",
+            description: "Fichier palette-pixelart.png téléchargé.",
+          });
+        }
+      }, 'image/png');
       return;
     }
 
@@ -447,13 +648,36 @@ export const ColorPaletteExtractor = () => {
                   ))}
                 </div>
 
+                {/* Aperçu de la rampe pixel art */}
+                <div className="pt-4">
+                  <Label className="text-sm font-medium mb-2 block">Aperçu rampe pixel art</Label>
+                  <div className="p-4 bg-muted rounded-lg flex justify-center">
+                    <canvas
+                      ref={(canvas) => {
+                        if (canvas && extractedColors.length > 0) {
+                          const pixelArtCanvas = generatePixelArtRamp();
+                          const ctx = canvas.getContext('2d');
+                          if (ctx) {
+                            // Scale up for better visibility (8x scale)
+                            const scale = 8;
+                            canvas.width = pixelArtCanvas.width * scale;
+                            canvas.height = pixelArtCanvas.height * scale;
+                            ctx.imageSmoothingEnabled = false;
+                            ctx.drawImage(pixelArtCanvas, 0, 0, canvas.width, canvas.height);
+                          }
+                        }
+                      }}
+                      className="border border-border rounded max-w-full"
+                    />
+                  </div>
+                </div>
+
                 {/* Export buttons */}
-                <div className="flex gap-2 pt-4">
+                <div className="grid grid-cols-2 gap-2 pt-4">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => exportPalette('txt')}
-                    className="flex-1"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export .TXT
@@ -462,10 +686,17 @@ export const ColorPaletteExtractor = () => {
                     variant="outline" 
                     size="sm" 
                     onClick={() => exportPalette('lst')}
-                    className="flex-1"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export .LST
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => exportPalette('pixelart')}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Pixel Art
                   </Button>
                   <Button 
                     variant="outline" 
@@ -478,7 +709,6 @@ export const ColorPaletteExtractor = () => {
                         description: "Toute la palette a été copiée.",
                       });
                     }}
-                    className="flex-1"
                   >
                     <Copy className="w-4 h-4 mr-2" />
                     Copier tout

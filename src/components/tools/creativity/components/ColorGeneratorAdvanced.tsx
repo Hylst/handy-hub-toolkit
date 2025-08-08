@@ -8,6 +8,7 @@ import { Copy, RefreshCw, Heart, Download, Palette, Pipette } from "lucide-react
 import { toast } from "@/hooks/use-toast";
 import { ColorPaletteExtractor } from "./ColorPaletteExtractor";
 import { ColorHarmonyGenerator } from "./ColorHarmonyGenerator";
+import { IntelligentPaletteGenerator } from "./IntelligentPaletteGenerator";
 
 interface ColorInfo {
   hex: string;
@@ -165,8 +166,9 @@ export const ColorGeneratorAdvanced = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="generator" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="generator">Générateur</TabsTrigger>
+          <TabsTrigger value="palettes">Palettes</TabsTrigger>
           <TabsTrigger value="harmonies">Harmonies</TabsTrigger>
           <TabsTrigger value="extractor">Extracteur</TabsTrigger>
           <TabsTrigger value="history">Historique</TabsTrigger>
@@ -261,6 +263,10 @@ export const ColorGeneratorAdvanced = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="palettes">
+          <IntelligentPaletteGenerator />
         </TabsContent>
 
         <TabsContent value="harmonies">
